@@ -260,6 +260,7 @@
   <!-- Onglets -->
   <nav class="tabs" id="top-tabs">
     <button data-tab="t-live">📡 En direct</button>
+    <button data-tab="t-ticket">🎫 Mon ticket</button>
     <button data-tab="t-matchs" class="on">📅 Matchs du jour</button>
     <button data-tab="t-paris">✓ Paris à tenter</button>
     <button data-tab="t-raison">✎ Raisonnement</button>
@@ -295,7 +296,7 @@
     <div class="table-scroll">
       <table class="matches">
         <thead>
-          <tr><th>Match</th><th>Début</th><th>Cotes</th><th>Proba réelle</th><th>Avis</th><th>Marge</th></tr>
+          <tr><th>Match</th><th>Début</th><th>Cotes</th><th>Proba réelle</th><th>Avis</th><th>Marge</th><th></th></tr>
         </thead>
         <tbody id="live-body"></tbody>
       </table>
@@ -405,6 +406,35 @@
       <div class="guide-item"><h3><b>08</b>Modèle foot (Poisson)</h3><p>À partir des buts attendus de chaque équipe, calcule les probas 1-N-2, over/under et le score probable.</p><div class="ex">1,6 vs 1,1 → score probable <b>1-1</b>, Over 2,5 à 51 %.</div></div>
       <div class="guide-item"><h3><b>09</b>Risque de ruine</h3><p>Simule 1500 fois ta stratégie → quelle chance de tout perdre. Mise grosse = danger visible.</p><div class="ex">Double ta mise → le <b>% rouge grimpe</b> fort.</div></div>
     </div>
+  </section>
+
+  <!-- Mon ticket -->
+  <section class="card daily tab-panel" id="t-ticket">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num" style="color:var(--accent)">🎫</span><h2>Mon ticket</h2></div>
+      <span class="daily-date">Compose-le, je te dis s'il est bon</span>
+    </div>
+    <div class="daily-banner">Ajoute tes paris (ex. « Allemagne victoire » 1,20 · « Pays-Bas ou nul » 1,30 · « Portugal victoire » 2,00), à la main ou depuis l'onglet 📡 En direct. Je calcule la cote, tes chances réelles et un verdict honnête.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="field" style="flex:2;min-width:180px"><label>Intitulé du pari</label><input type="text" id="mt-label" placeholder="ex. Allemagne victoire"></div>
+      <div class="field" style="flex:1;min-width:90px"><label>Cote</label><input type="number" id="mt-odds" step="0.01" min="1.01" placeholder="1.85"></div>
+      <button class="mini-btn" id="mt-add" style="padding:10px 18px">+ Ajouter</button>
+    </div>
+    <div class="table-scroll">
+      <table class="matches">
+        <thead><tr><th>Sélection</th><th>Cote</th><th>Chance est.</th><th></th></tr></thead>
+        <tbody id="mt-body"></tbody>
+      </table>
+    </div>
+    <div class="field" style="max-width:220px"><label>Ton capital (€)</label><input type="number" id="mt-bank" step="10" value="557" min="1"></div>
+    <div class="out">
+      <div class="out-row"><span class="k">Nombre de sélections</span><span class="v" id="mt-n">0</span></div>
+      <div class="out-row"><span class="k">Cote combinée</span><span class="v accent" id="mt-cote">—</span></div>
+      <div class="out-row"><span class="k">Chance de gagner (estimée)</span><span class="v" id="mt-prob">—</span></div>
+      <div class="out-row out-hero"><span class="k">Mise conseillée → gain</span><span class="v" id="mt-stake">—</span></div>
+      <div id="mt-verdict" class="verdict">Ajoute au moins un pari.</div>
+    </div>
+    <p class="hint">« Chance estimée » = proba réelle du marché (marge retirée) si le pari vient de l'onglet En direct, sinon déduite de la cote. Plus tu ajoutes de sélections, plus la chance chute. Verdict = aide à la décision, pas une garantie.</p>
   </section>
 
   <div class="grid">
@@ -1328,14 +1358,20 @@
           '<td class="m-num">' + cotes + '</td>' +
           '<td class="m-num">' + probs + '</td>' +
           '<td><span class="badge ' + rk.cls + '">' + avis + '</span></td>' +
-          '<td class="m-num">' + m.margin.toFixed(1) + '%</td>';
-        const favPrice = m.outcomes.reduce((a, b) => (b.fairProb > a.fairProb ? b : a)).price;
+          '<td class="m-num">' + m.margin.toFixed(1) + '%</td>' +
+          '<td><button class="mini-btn mt-plus">+ ticket</button></td>';
+        const fav = m.outcomes.reduce((a, b) => (b.fairProb > a.fairProb ? b : a));
         tr.style.cursor = 'pointer';
-        tr.title = 'Charger la cote du favori dans le module 02 (EV)';
+        tr.title = 'Clic : charger la cote du favori dans le module 02 (EV)';
         tr.addEventListener('click', () => {
-          $('ev-d').value = favPrice; runEV();
+          $('ev-d').value = fav.price; runEV();
           $('ev-d').scrollIntoView({ behavior: 'smooth', block: 'center' });
           $('ev-p').focus();
+        });
+        tr.querySelector('.mt-plus').addEventListener('click', e => {
+          e.stopPropagation();
+          mtAdd(m.home + ' – ' + m.away + ' : ' + fav.name, fav.price, fav.fairProb);
+          $('live-status').innerHTML = '✓ Ajouté à <b>Mon ticket</b> : ' + fav.name + ' — va dans l\'onglet 🎫 Mon ticket pour le verdict.';
         });
         body.appendChild(tr);
       });
@@ -1343,7 +1379,96 @@
       status.innerHTML = '⚠️ Serveur injoignable. Lance le projet avec <b>npm start</b> puis ouvre http://localhost:4300 (le fichier ouvert seul ne peut pas appeler l\'API).';
     }
   }
+  // Remplit le menu avec TOUTES les compétitions actives de l'API, groupées par sport
+  async function loadSports() {
+    try {
+      const r = await fetch('/api/sports');
+      if (!r.ok) return; // on garde la liste par défaut (clé absente / hors-ligne)
+      const list = await r.json();
+      const active = Array.isArray(list) ? list.filter(s => s.active) : [];
+      if (!active.length) return;
+      const groups = {};
+      active.forEach(s => { (groups[s.group] ||= []).push(s); });
+      const sel = $('live-sport');
+      const prev = sel.value;
+      sel.innerHTML = '';
+      Object.keys(groups).sort().forEach(g => {
+        const og = document.createElement('optgroup');
+        og.label = g;
+        groups[g].sort((a, b) => a.title.localeCompare(b.title)).forEach(s => {
+          const o = document.createElement('option');
+          o.value = s.key; o.textContent = s.title;
+          og.appendChild(o);
+        });
+        sel.appendChild(og);
+      });
+      // Sélection par défaut : on garde le choix précédent, sinon Ligue des Nations, sinon le 1er
+      const keys = active.map(s => s.key);
+      sel.value = keys.includes(prev) ? prev
+        : keys.includes('soccer_uefa_nations_league') ? 'soccer_uefa_nations_league'
+        : active[0].key;
+      $('live-status').textContent = active.length + ' compétitions disponibles — choisis-en une et clique « Charger les cotes ».';
+    } catch (e) { /* on garde la liste par défaut */ }
+  }
   $('live-refresh').addEventListener('click', fetchLive);
+
+  // ---------- Mon ticket ----------
+  const MYTICKET = [];
+  function mtAdd(label, odds, fairProb) {
+    if (!label || !(odds > 1)) return;
+    MYTICKET.push({ label, odds: +odds, fairProb: (fairProb != null && fairProb > 0) ? fairProb : 1 / odds });
+    renderMyTicket();
+  }
+  function renderMyTicket() {
+    const body = $('mt-body');
+    body.innerHTML = '';
+    MYTICKET.forEach((s, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="m-name">' + s.label + '</td>' +
+        '<td class="m-num">' + s.odds.toFixed(2) + '</td>' +
+        '<td class="m-num">' + (s.fairProb * 100).toFixed(0) + '%</td>' +
+        '<td><button class="rm" data-i="' + i + '" aria-label="Retirer">✕</button></td>';
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('.rm').forEach(b =>
+      b.addEventListener('click', () => { MYTICKET.splice(+b.dataset.i, 1); renderMyTicket(); }));
+    evaluateTicket();
+  }
+  function evaluateTicket() {
+    const v = $('mt-verdict');
+    $('mt-n').textContent = MYTICKET.length;
+    if (!MYTICKET.length) {
+      $('mt-cote').textContent = '—'; $('mt-prob').textContent = '—'; $('mt-stake').textContent = '—';
+      v.className = 'verdict'; v.textContent = 'Ajoute au moins un pari.';
+      return;
+    }
+    const n = MYTICKET.length;
+    const cote = MYTICKET.reduce((a, b) => a * b.odds, 1);
+    const prob = MYTICKET.reduce((a, b) => a * b.fairProb, 1);
+    const bank = parseFloat($('mt-bank').value) || 0;
+    $('mt-cote').textContent = cote.toFixed(2);
+    $('mt-prob').textContent = (prob * 100).toFixed(1) + ' %';
+
+    let cls, txt, pct;
+    if (n >= 5) { cls = 'bad'; txt = '🚫 Trop de sélections (' + n + ') — ticket loterie, ' + (prob * 100).toFixed(0) + '% de chances. Joue-les plutôt séparément.'; pct = 0.005; }
+    else if (prob >= 0.5 && n <= 2) { cls = 'good'; txt = '✅ Bon ticket — ' + (prob * 100).toFixed(0) + '% de chances, risque maîtrisé.'; pct = 0.02; }
+    else if (prob >= 0.33) { cls = 'warn'; txt = '⚠️ Jouable mais risqué — ' + (prob * 100).toFixed(0) + '% de chances. Mise petit.'; pct = 0.01; }
+    else { cls = 'bad'; txt = '🚫 Risqué — seulement ' + (prob * 100).toFixed(0) + '% de chances de gagner.'; pct = 0.005; }
+    v.className = 'verdict ' + cls;
+    v.textContent = txt;
+    const stake = Math.max(1, Math.round(bank * pct));
+    $('mt-stake').textContent = stake + ' € → ' + (stake * cote).toFixed(2) + ' €';
+  }
+  $('mt-add').addEventListener('click', () => {
+    const label = $('mt-label').value.trim();
+    const odds = parseFloat($('mt-odds').value);
+    if (!label || !(odds > 1)) { $('mt-label').focus(); return; }
+    mtAdd(label, odds, null);
+    $('mt-label').value = ''; $('mt-odds').value = ''; $('mt-label').focus();
+  });
+  $('mt-odds').addEventListener('keydown', e => { if (e.key === 'Enter') $('mt-add').click(); });
+  $('mt-bank').addEventListener('input', evaluateTicket);
 
   // ---------- Onglets du haut ----------
   document.querySelectorAll('#top-tabs button').forEach(btn => {
@@ -1352,10 +1477,13 @@
       btn.classList.add('on');
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       $(btn.dataset.tab).classList.add('active');
+      // Charge automatiquement les cotes la 1re fois qu'on ouvre l'onglet En direct
+      if (btn.dataset.tab === 't-live' && !$('live-body').children.length) fetchLive();
     });
   });
 
   // ---------- Init ----------
   conv(); ev(); kelly(); vig(); arb(); combo(); analyse(); pois();
   renderDaily(); renderPicks(); renderReason(); renderTickets(); ruin(); objectif();
+  loadSports(); renderMyTicket();
 </script>
