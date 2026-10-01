@@ -170,6 +170,16 @@
   .b-mid  { background: var(--accent-soft); color: var(--accent); }
   .b-high { background: var(--neg-soft); color: var(--neg); }
   .m-verdict { color: var(--ink-soft); font-size: 0.8rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 5px 10px; font-family: var(--mono); font-size: 0.78rem; font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; transition: all .12s; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip b { color: var(--muted); font-weight: 600; margin-left: 4px; }
+  .chip-added { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #06121f; }
+  .chip-added b { color: #06121f; opacity: .7; }
+  .live-open { cursor: pointer; border-bottom: 1px dashed var(--muted); }
+  .live-open:hover { color: var(--accent); border-color: var(--accent); }
+  .detail-box { padding: 4px 2px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .mkt-h { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 7px; font-weight: 700; }
 
   /* Raisonnement */
   .reason-list { display: flex; flex-direction: column; gap: 12px; }
@@ -296,7 +306,7 @@
     <div class="table-scroll">
       <table class="matches">
         <thead>
-          <tr><th>Match</th><th>Début</th><th>Cotes</th><th>Proba réelle</th><th>Avis</th><th>Marge</th><th></th></tr>
+          <tr><th>Match</th><th>Début</th><th>Sélections — clique pour ajouter à ton ticket</th><th>Avis</th><th>Marge</th></tr>
         </thead>
         <tbody id="live-body"></tbody>
       </table>
@@ -1346,34 +1356,59 @@
         const d = new Date(m.commence);
         const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' +
           d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        const cotes = m.outcomes.map(o => o.price.toFixed(2)).join(' / ');
-        const probs = m.outcomes.map(o => (o.fairProb * 100).toFixed(0) + '%').join(' / ');
         const rk = RISK_LIVE[m.avis.niveau] || RISK_LIVE.high;
         let avis = m.avis.texte + ' (' + m.avis.fairProb + '%)';
         if (m.avisTotals) avis += ' · O' + m.avisTotals.point + ' ' + m.avisTotals.over + '%';
         const tr = document.createElement('tr');
         tr.innerHTML =
-          '<td><span class="m-name">' + m.home + ' – ' + m.away + '</span></td>' +
+          '<td><span class="m-name live-open" title="Clique pour TOUS les paris">' + m.home + ' – ' + m.away + ' ▾</span></td>' +
           '<td class="m-num">' + dateStr + '</td>' +
-          '<td class="m-num">' + cotes + '</td>' +
-          '<td class="m-num">' + probs + '</td>' +
+          '<td class="chips"></td>' +
           '<td><span class="badge ' + rk.cls + '">' + avis + '</span></td>' +
-          '<td class="m-num">' + m.margin.toFixed(1) + '%</td>' +
-          '<td><button class="mini-btn mt-plus">+ ticket</button></td>';
-        const fav = m.outcomes.reduce((a, b) => (b.fairProb > a.fairProb ? b : a));
-        tr.style.cursor = 'pointer';
-        tr.title = 'Clic : charger la cote du favori dans le module 02 (EV)';
-        tr.addEventListener('click', () => {
-          $('ev-d').value = fav.price; runEV();
-          $('ev-d').scrollIntoView({ behavior: 'smooth', block: 'center' });
-          $('ev-p').focus();
+          '<td class="m-num">' + m.margin.toFixed(1) + '%</td>';
+        const chipsCell = tr.querySelector('.chips');
+        const sels = m.outcomes.map(o => ({
+          label: m.home + ' – ' + m.away + ' : ' + o.name,
+          short: o.name, price: o.price, p: o.fairProb
+        }));
+        if (m.totals) {
+          sels.push({ label: m.home + ' – ' + m.away + ' : plus de ' + m.totals.point + ' buts', short: '+' + m.totals.point, price: m.totals.over.price, p: m.totals.over.fairProb });
+          sels.push({ label: m.home + ' – ' + m.away + ' : moins de ' + m.totals.point + ' buts', short: '−' + m.totals.point, price: m.totals.under.price, p: m.totals.under.fairProb });
+        }
+        sels.forEach(s => {
+          const b = document.createElement('button');
+          b.className = 'chip';
+          b.innerHTML = s.short + ' <b>' + s.price.toFixed(2) + '</b>';
+          b.title = Math.round(s.p * 100) + '% de chances (proba réelle)';
+          b.addEventListener('click', () => {
+            mtAdd(s.label, s.price, s.p);
+            b.classList.add('chip-added');
+            $('live-status').innerHTML = '✓ Ajouté : <b>' + s.label + '</b> — va dans l\'onglet 🎫 Mon ticket pour le verdict.';
+          });
+          chipsCell.appendChild(b);
         });
-        tr.querySelector('.mt-plus').addEventListener('click', e => {
-          e.stopPropagation();
-          mtAdd(m.home + ' – ' + m.away + ' : ' + fav.name, fav.price, fav.fairProb);
-          $('live-status').innerHTML = '✓ Ajouté à <b>Mon ticket</b> : ' + fav.name + ' — va dans l\'onglet 🎫 Mon ticket pour le verdict.';
+        // Ligne de détail (tous les marchés), chargée à la demande
+        const detail = document.createElement('tr');
+        detail.style.display = 'none';
+        detail.innerHTML = '<td colspan="5"><div class="detail-box">Chargement…</div></td>';
+        let loaded = false;
+        tr.querySelector('.live-open').addEventListener('click', async () => {
+          const open = detail.style.display === 'none';
+          detail.style.display = open ? '' : 'none';
+          if (open && !loaded) {
+            loaded = true;
+            const box = detail.querySelector('.detail-box');
+            box.textContent = 'Chargement de tous les paris…';
+            try {
+              const r = await fetch('/api/event?sport=' + encodeURIComponent(sport) + '&id=' + encodeURIComponent(m.id));
+              const data = await r.json();
+              if (!r.ok) { box.textContent = 'Détails indisponibles : ' + (data.message || r.status); loaded = false; return; }
+              renderDetail(box, data);
+            } catch (e) { box.textContent = 'Serveur injoignable.'; loaded = false; }
+          }
         });
         body.appendChild(tr);
+        body.appendChild(detail);
       });
     } catch (e) {
       status.innerHTML = '⚠️ Serveur injoignable. Lance le projet avec <b>npm start</b> puis ouvre http://localhost:4300 (le fichier ouvert seul ne peut pas appeler l\'API).';
@@ -1411,6 +1446,49 @@
     } catch (e) { /* on garde la liste par défaut */ }
   }
   $('live-refresh').addEventListener('click', fetchLive);
+
+  // Libellés français des marchés et des issues
+  const MK_LABEL = {
+    h2h: 'Résultat (1N2)', double_chance: 'Double chance', draw_no_bet: 'Nul remboursé',
+    btts: 'Les deux équipes marquent', totals: 'Plus / Moins de buts', spreads: 'Handicap',
+    player_goal_scorer_anytime: 'Buteur', player_first_goal_scorer: 'Premier buteur'
+  };
+  function outcomeLabel(key, o) {
+    if (key === 'btts') return o.name === 'Yes' ? 'Oui' : o.name === 'No' ? 'Non' : o.name;
+    if (key === 'totals') return (o.name === 'Over' ? 'Plus de ' : 'Moins de ') + o.point + ' buts';
+    if (key === 'spreads') return o.name + ' ' + (o.point > 0 ? '+' : '') + o.point;
+    if (o.desc) return o.desc + (o.name && o.name !== 'Yes' ? ' — ' + o.name : '');
+    return o.name + (o.point != null ? ' ' + (o.point > 0 ? '+' : '') + o.point : '');
+  }
+  function renderDetail(box, data) {
+    box.innerHTML = '';
+    if (!data.markets || !data.markets.length) { box.textContent = 'Aucun marché détaillé disponible.'; return; }
+    data.markets.forEach(mk => {
+      const block = document.createElement('div');
+      const h = document.createElement('div');
+      h.className = 'mkt-h';
+      h.textContent = MK_LABEL[mk.key] || mk.key;
+      block.appendChild(h);
+      const wrap = document.createElement('div');
+      wrap.className = 'chips';
+      mk.outcomes.forEach(o => {
+        const lab = outcomeLabel(mk.key, o);
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.innerHTML = lab + ' <b>' + o.price.toFixed(2) + '</b>';
+        b.title = Math.round(o.fairProb * 100) + '% de chances (proba réelle)';
+        b.addEventListener('click', () => {
+          mtAdd(data.home + ' – ' + data.away + ' : ' + lab, o.price, o.fairProb);
+          b.classList.add('chip-added');
+          $('live-status').innerHTML = '✓ Ajouté : <b>' + data.home + ' – ' + data.away + ' : ' + lab + '</b> — onglet 🎫 Mon ticket.';
+        });
+        wrap.appendChild(b);
+      });
+      block.appendChild(wrap);
+      box.appendChild(block);
+    });
+    if (data.quotaRestant) $('live-quota').textContent = 'Quota restant : ' + data.quotaRestant;
+  }
 
   // ---------- Mon ticket ----------
   const MYTICKET = [];
