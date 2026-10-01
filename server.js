@@ -5,9 +5,17 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fetch as apiFetch, ProxyAgent } from 'undici';
 import 'dotenv/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Réseau d'entreprise : si un proxy est défini, on le fait suivre aux appels API
+// (sans ça, Node ignore les variables proxy et les appels échouent en timeout).
+// À la maison (sans proxy), dispatcher = undefined → connexion directe normale.
+const PROXY = process.env.HTTPS_PROXY || process.env.HTTP_PROXY ||
+              process.env.https_proxy || process.env.http_proxy;
+const dispatcher = PROXY ? new ProxyAgent(PROXY) : undefined;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,7 +111,7 @@ app.get('/api/sports', async (req, res) => {
   try {
     const cached = getCache('sports');
     if (cached) return res.json(cached);
-    const r = await fetch(`${ODDS_BASE}/sports/?apiKey=${API_KEY}`);
+    const r = await apiFetch(`${ODDS_BASE}/sports/?apiKey=${API_KEY}`, { dispatcher });
     if (!r.ok) throw new Error(`API ${r.status}`);
     const data = await r.json();
     setCache('sports', data);
@@ -128,7 +136,7 @@ app.get('/api/odds', async (req, res) => {
     if (cached) return res.json(cached);
 
     const url = `${ODDS_BASE}/sports/${sport}/odds/?apiKey=${API_KEY}&regions=${REGION}&markets=h2h,totals&oddsFormat=decimal`;
-    const r = await fetch(url);
+    const r = await apiFetch(url, { dispatcher });
     const remaining = r.headers.get('x-requests-remaining');
     if (!r.ok) {
       const body = await r.text();
@@ -149,5 +157,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true, hasKey: !!API_KEY }));
 
 app.listen(PORT, () => {
   console.log(`\n  PariStat en ligne  →  http://localhost:${PORT}`);
-  console.log(`  Clé API détectée   →  ${API_KEY ? 'oui ✓' : 'NON — ajoute ODDS_API_KEY dans .env'}\n`);
+  console.log(`  Clé API détectée   →  ${API_KEY ? 'oui ✓' : 'NON — ajoute ODDS_API_KEY dans .env'}`);
+  if (PROXY) console.log(`  Proxy détecté      →  ${PROXY}`);
+  console.log('');
 });
