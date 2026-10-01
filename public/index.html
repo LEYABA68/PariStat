@@ -335,6 +335,13 @@
       <span class="daily-date">Sélection value — 01/10/2026</span>
     </div>
     <div class="daily-banner" style="background:var(--pos-soft);color:var(--pos)">Au-delà du 1X2 : BTTS, over/under, buteur, handicap. Value réelle, mais mise raisonnable — jamais tout sur un combiné.</div>
+    <div class="seg" id="picks-seg">
+      <button data-s="tous" class="on">Tous</button>
+      <button data-s="foot">⚽</button>
+      <button data-s="basket">🏀</button>
+      <button data-s="hockey">🏒</button>
+      <button data-s="tennis">🎾</button>
+    </div>
     <div class="table-scroll">
       <table class="matches">
         <thead>
@@ -903,16 +910,16 @@
 
   // ---------- Paris à tenter ----------
   const PICKS = [
-    { ico: '⚽', match: 'Danemark – Portugal',      market: 'Les 2 équipes marquent — OUI', cote: 1.60, conf: 3, why: 'Les 2 nations ont marqué dans leurs 2 matchs de LN.' },
-    { ico: '⚽', match: 'Allemagne – Serbie',        market: 'Les 2 équipes marquent — OUI', cote: 1.80, conf: 3, why: 'Tadić/Jović de retour ; l\'Allemagne presse haut et s\'ouvre.' },
-    { ico: '⚽', match: 'Pays de Galles – Norvège',  market: 'Haaland buteur (anytime)',      cote: 1.45, conf: 3, why: '65 buts en 57 sélections — menace permanente.' },
-    { ico: '⚽', match: 'Pays de Galles – Norvège',  market: 'Norvège gagne & +1,5 but',      cote: 1.65, conf: 2, why: 'Norvège nettement supérieure, cherche à marquer plusieurs fois.' },
-    { ico: '⚽', match: 'Danemark – Portugal',       market: 'Over 2,5 buts',                 cote: 1.70, conf: 2, why: 'Défense danoise diminuée, deux attaques tranchantes.' },
-    { ico: '⚽', match: 'Grèce – Pays-Bas',          market: 'Les 2 équipes marquent — OUI', cote: 1.67, conf: 2, why: 'Pays-Bas : 100 % de BTTS sur les 5 derniers matchs.' },
-    { ico: '⚽', match: 'Israël – Kosovo',           market: 'Kosovo vainqueur',              cote: 2.15, conf: 1, why: 'Israël 0 pt et sans public ; Kosovo mieux armé mais rien de sûr.' },
-    { ico: '🏒', match: 'Edmonton – Vancouver',      market: 'Over 6,5 buts',                 cote: 1.87, conf: 2, why: 'Fini 6-5 ; deux attaques, défenses tendres en ouverture.' },
-    { ico: '🏒', match: 'Chicago – Utah',            market: 'Utah −1,5 (handicap)',          cote: 2.00, conf: 2, why: 'Profondeur offensive + avantage de la glace.' },
-    { ico: '🎾', match: 'China Open (1er tour)',     market: 'Aucun pari conseillé',          cote: null, conf: 0, why: 'Cotes trop basses au 1er tour — attendre les tours avancés.' }
+    { sport: 'foot',   ico: '⚽', match: 'Danemark – Portugal',      market: 'Les 2 équipes marquent — OUI', cote: 1.60, conf: 3, why: 'Les 2 nations ont marqué dans leurs 2 matchs de LN.' },
+    { sport: 'foot',   ico: '⚽', match: 'Allemagne – Serbie',        market: 'Les 2 équipes marquent — OUI', cote: 1.80, conf: 3, why: 'Tadić/Jović de retour ; l\'Allemagne presse haut et s\'ouvre.' },
+    { sport: 'foot',   ico: '⚽', match: 'Pays de Galles – Norvège',  market: 'Haaland buteur (anytime)',      cote: 1.45, conf: 3, why: '65 buts en 57 sélections — menace permanente.' },
+    { sport: 'foot',   ico: '⚽', match: 'Pays de Galles – Norvège',  market: 'Norvège gagne & +1,5 but',      cote: 1.65, conf: 2, why: 'Norvège nettement supérieure, cherche à marquer plusieurs fois.' },
+    { sport: 'foot',   ico: '⚽', match: 'Danemark – Portugal',       market: 'Over 2,5 buts',                 cote: 1.70, conf: 2, why: 'Défense danoise diminuée, deux attaques tranchantes.' },
+    { sport: 'foot',   ico: '⚽', match: 'Grèce – Pays-Bas',          market: 'Les 2 équipes marquent — OUI', cote: 1.67, conf: 2, why: 'Pays-Bas : 100 % de BTTS sur les 5 derniers matchs.' },
+    { sport: 'foot',   ico: '⚽', match: 'Israël – Kosovo',           market: 'Kosovo vainqueur',              cote: 2.15, conf: 1, why: 'Israël 0 pt et sans public ; Kosovo mieux armé mais rien de sûr.' },
+    { sport: 'hockey', ico: '🏒', match: 'Edmonton – Vancouver',      market: 'Over 6,5 buts',                 cote: 1.87, conf: 2, why: 'Fini 6-5 ; deux attaques, défenses tendres en ouverture.' },
+    { sport: 'hockey', ico: '🏒', match: 'Chicago – Utah',            market: 'Utah −1,5 (handicap)',          cote: 2.00, conf: 2, why: 'Profondeur offensive + avantage de la glace.' },
+    { sport: 'tennis', ico: '🎾', match: 'China Open (1er tour)',     market: 'Aucun pari conseillé',          cote: null, conf: 0, why: 'Cotes trop basses au 1er tour — attendre les tours avancés.' }
   ];
   const CONF = {
     3: { cls: 'b-low',  txt: 'Value forte ✓✓✓' },
@@ -920,10 +927,16 @@
     1: { cls: 'b-mid',  txt: 'Spéculatif ✓' },
     0: { cls: 'b-skip', txt: 'À éviter' }
   };
+  let picksFilter = 'tous';
   function renderPicks() {
     const body = $('picks-body');
     body.innerHTML = '';
-    PICKS.forEach(p => {
+    const list = PICKS.filter(p => picksFilter === 'tous' || p.sport === picksFilter);
+    if (!list.length) {
+      body.innerHTML = '<tr><td colspan="5" class="m-verdict">Aucun pari conseillé pour ce sport aujourd\'hui.</td></tr>';
+      return;
+    }
+    list.forEach(p => {
       const c = CONF[p.conf];
       const cote = p.cote ? p.cote.toFixed(2) : '—';
       const tr = document.createElement('tr');
@@ -946,6 +959,15 @@
       body.appendChild(tr);
     });
   }
+
+  document.querySelectorAll('#picks-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#picks-seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      picksFilter = btn.dataset.s;
+      renderPicks();
+    });
+  });
 
   // ---------- Raisonnement par match ----------
   const REASONING = [
@@ -1290,7 +1312,7 @@
         body.appendChild(tr);
       });
     } catch (e) {
-      status.innerHTML = '⚠️ Serveur injoignable. Lance le projet avec <b>npm start</b> puis ouvre http://localhost:3000 (le fichier ouvert seul ne peut pas appeler l\'API).';
+      status.innerHTML = '⚠️ Serveur injoignable. Lance le projet avec <b>npm start</b> puis ouvre http://localhost:4300 (le fichier ouvert seul ne peut pas appeler l\'API).';
     }
   }
   $('live-refresh').addEventListener('click', fetchLive);

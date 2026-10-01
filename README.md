@@ -45,7 +45,7 @@ cp .env.example .env
 npm start
 ```
 
-Ouvre ensuite **http://localhost:3000**.
+Ouvre ensuite **http://localhost:4300**.
 
 ### Obtenir une clé API (gratuite)
 

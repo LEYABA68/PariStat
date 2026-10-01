@@ -18,7 +18,7 @@ const PROXY = process.env.HTTPS_PROXY || process.env.HTTP_PROXY ||
 const dispatcher = PROXY ? new ProxyAgent(PROXY) : undefined;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4300;
 const API_KEY = process.env.ODDS_API_KEY;
 const ODDS_BASE = 'https://api.the-odds-api.com/v4';
 const REGION = process.env.ODDS_REGION || 'eu'; // eu | uk | us | au
