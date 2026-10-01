@@ -359,6 +359,13 @@
       <div class="card-head"><span class="card-num">✎</span><h2>Raisonnement par match</h2></div>
       <span class="daily-date">Pourquoi ces prédictions</span>
     </div>
+    <div class="seg" id="reason-seg">
+      <button data-s="tous" class="on">Tous</button>
+      <button data-s="foot">⚽</button>
+      <button data-s="basket">🏀</button>
+      <button data-s="hockey">🏒</button>
+      <button data-s="tennis">🎾</button>
+    </div>
     <div class="reason-list" id="reason-list"></div>
   </section>
 
@@ -1072,10 +1079,23 @@
       skip: true
     }
   ];
+  let reasonFilter = 'tous';
+  function sportOfLabel(t) {
+    if (t.includes('⚽')) return 'foot';
+    if (t.includes('🏀')) return 'basket';
+    if (t.includes('🏒')) return 'hockey';
+    if (t.includes('🎾')) return 'tennis';
+    return 'autre';
+  }
   function renderReason() {
     const box = $('reason-list');
     box.innerHTML = '';
-    REASONING.forEach(r => {
+    const list = REASONING.filter(r => reasonFilter === 'tous' || sportOfLabel(r.t) === reasonFilter);
+    if (!list.length) {
+      box.innerHTML = '<div class="reason"><p style="margin:0">Aucune analyse pour ce sport aujourd\'hui.</p></div>';
+      return;
+    }
+    list.forEach(r => {
       const el = document.createElement('div');
       el.className = 'reason';
       el.innerHTML = '<h3>' + r.t + '</h3><ul>' +
@@ -1084,6 +1104,14 @@
       box.appendChild(el);
     });
   }
+  document.querySelectorAll('#reason-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#reason-seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      reasonFilter = btn.dataset.s;
+      renderReason();
+    });
+  });
 
   // ---------- Tickets proposés ----------
   const TICKETS = [
