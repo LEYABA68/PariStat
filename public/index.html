@@ -1,0 +1,1300 @@
+<title>PariStat — Calculateur stats paris sportifs</title>
+<style>
+  :root {
+    --ground: #0e1511;
+    --surface: #141d18;
+    --surface-2: #1a2620;
+    --line: #27352c;
+    --ink: #eef2ee;
+    --ink-soft: #a9b7ac;
+    --ink-faint: #70807400;
+    --muted: #7f8f82;
+    --accent: #e6b24a;
+    --accent-soft: #3a3016;
+    --pos: #46c28a;
+    --pos-soft: #16281f;
+    --neg: #e5574e;
+    --neg-soft: #2a1716;
+    --radius: 14px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground: #f3f5f1;
+      --surface: #ffffff;
+      --surface-2: #f6f8f4;
+      --line: #dfe5dd;
+      --ink: #19211b;
+      --ink-soft: #4a564c;
+      --muted: #6a776c;
+      --accent: #a9792a;
+      --accent-soft: #f3e8cf;
+      --pos: #1f9d6b;
+      --pos-soft: #e4f3ec;
+      --neg: #c73f36;
+      --neg-soft: #f8e5e3;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0e1511; --surface: #141d18; --surface-2: #1a2620; --line: #27352c;
+    --ink: #eef2ee; --ink-soft: #a9b7ac; --muted: #7f8f82;
+    --accent: #e6b24a; --accent-soft: #3a3016;
+    --pos: #46c28a; --pos-soft: #16281f; --neg: #e5574e; --neg-soft: #2a1716;
+  }
+  :root[data-theme="light"] {
+    --ground: #f3f5f1; --surface: #ffffff; --surface-2: #f6f8f4; --line: #dfe5dd;
+    --ink: #19211b; --ink-soft: #4a564c; --muted: #6a776c;
+    --accent: #a9792a; --accent-soft: #f3e8cf;
+    --pos: #1f9d6b; --pos-soft: #e4f3ec; --neg: #c73f36; --neg-soft: #f8e5e3;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 20px 72px; }
+
+  /* Header */
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 44px; height: 44px; border-radius: 11px; flex: none;
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    display: grid; place-items: center;
+    color: var(--accent); font-family: var(--mono); font-weight: 700; font-size: 20px;
+  }
+  h1 { font-size: 1.55rem; margin: 0; letter-spacing: -0.02em; line-height: 1.1; }
+  h1 span { color: var(--accent); }
+  .tagline { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
+  .theme-btn {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+    border-radius: 9px; padding: 8px 14px; font-size: 0.8rem; cursor: pointer; font-family: var(--sans);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .theme-btn:hover { border-color: var(--accent); color: var(--ink); }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 20px 22px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .card-head { display: flex; align-items: baseline; gap: 10px; }
+  .card-num { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); letter-spacing: 0.08em; }
+  .card h2 { font-size: 1.02rem; margin: 0; letter-spacing: -0.01em; }
+  .card p.hint { margin: -6px 0 0; color: var(--muted); font-size: 0.78rem; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 0.73rem; color: var(--ink-soft); letter-spacing: 0.02em; text-transform: uppercase; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  input[type="number"], input[type="text"] {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 9px; padding: 10px 12px; font-family: var(--mono); font-size: 0.95rem;
+    font-variant-numeric: tabular-nums; outline: none;
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  /* Result panel */
+  .out {
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .out-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .out-row .k { font-size: 0.78rem; color: var(--ink-soft); }
+  .out-row .v { font-family: var(--mono); font-size: 1.02rem; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.01em; }
+  .out-hero { align-items: center; }
+  .out-hero .v { font-size: 1.7rem; }
+  .pos { color: var(--pos); }
+  .neg { color: var(--neg); }
+  .accent { color: var(--accent); }
+
+  .verdict { font-size: 0.8rem; padding: 7px 11px; border-radius: 8px; font-weight: 600; text-align: center; }
+  .verdict.good { background: var(--pos-soft); color: var(--pos); }
+  .verdict.bad  { background: var(--neg-soft); color: var(--neg); }
+  .verdict.warn { background: var(--accent-soft); color: var(--accent); }
+
+  .risk-meter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 2px; }
+  .risk-meter span { height: 9px; border-radius: 4px; background: var(--line); transition: background .15s; }
+  .risk-label { font-family: var(--mono); font-weight: 600; font-size: 0.82rem; }
+  .pois-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
+  .pois-cell { background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 6px; }
+  .pois-cell .pk { font-size: 0.68rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+  .pois-cell .pv { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; margin-top: 2px; }
+  .pois-cell.best { border-color: var(--accent); }
+  .pois-cell.best .pv { color: var(--accent); }
+  .span2 { grid-column: span 2; }
+
+  /* Matchs du jour */
+  .daily { margin-bottom: 18px; }
+  .daily-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .daily-date { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+  .daily-banner { background: var(--accent-soft); color: var(--accent); border-radius: 10px; padding: 10px 14px; font-size: 0.84rem; font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+  table.matches { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 560px; }
+  table.matches th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  table.matches td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  table.matches tr:last-child td { border-bottom: none; }
+  table.matches .m-name { font-weight: 600; }
+  table.matches .m-pick { color: var(--ink-soft); }
+  table.matches .m-num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+  .b-skip { background: var(--line); color: var(--ink-soft); }
+  .b-low  { background: var(--pos-soft); color: var(--pos); }
+  .b-mid  { background: var(--accent-soft); color: var(--accent); }
+  .b-high { background: var(--neg-soft); color: var(--neg); }
+  .m-verdict { color: var(--ink-soft); font-size: 0.8rem; }
+
+  /* Raisonnement */
+  .reason-list { display: flex; flex-direction: column; gap: 12px; }
+  .reason { border: 1px solid var(--line); border-radius: 11px; padding: 13px 15px; background: var(--surface-2); }
+  .reason h3 { margin: 0 0 7px; font-size: 0.92rem; }
+  .reason ul { margin: 0 0 9px; padding-left: 18px; color: var(--ink-soft); font-size: 0.83rem; display: flex; flex-direction: column; gap: 4px; }
+  .reason .pred { font-size: 0.82rem; font-weight: 600; color: var(--pos); background: var(--pos-soft); padding: 7px 11px; border-radius: 8px; }
+  .reason .pred.skip { color: var(--muted); background: var(--line); }
+
+  /* Tickets */
+  .tickets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .tickets { grid-template-columns: 1fr; } }
+  .ticket { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface-2); display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: border-color .15s; }
+  .ticket:hover { border-color: var(--accent); }
+  .ticket h3 { margin: 0; font-size: 0.92rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .ticket .tag { font-size: 0.66rem; padding: 2px 9px; border-radius: 999px; font-weight: 600; }
+  .ticket ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .ticket li { font-size: 0.8rem; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 10px; }
+  .ticket li .lc { font-family: var(--mono); color: var(--ink); }
+  .ticket .tfoot { margin-top: auto; border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .ticket .trow { display: flex; justify-content: space-between; font-size: 0.82rem; align-items: baseline; }
+  .ticket .trow .v { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ticket .trow .big { color: var(--accent); font-size: 1.1rem; }
+
+  /* Risque de ruine */
+  .ruin-inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .ruin-inputs { grid-template-columns: repeat(2, 1fr); } }
+  .ruin-out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 560px) { .ruin-out { grid-template-columns: 1fr; } }
+  .ruin-stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 13px 15px; }
+  .ruin-stat .k { font-size: 0.74rem; color: var(--ink-soft); }
+  .ruin-stat .v { font-family: var(--mono); font-size: 1.4rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 3px; }
+  canvas#ruin-canvas, canvas#obj-canvas { width: 100%; height: 210px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; display: block; }
+  .legend { display: flex; gap: 16px; font-size: 0.76rem; color: var(--ink-soft); flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  /* Onglets du haut */
+  .tabs { display: flex; gap: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 5px; margin-bottom: 18px; overflow-x: auto; }
+  .tabs button { border: none; background: transparent; color: var(--ink-soft); padding: 9px 15px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; font-family: var(--sans); font-weight: 500; }
+  .tabs button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .tabs button:hover:not(.on) { color: var(--ink); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: flex; }
+
+  /* Guide */
+  .guide-intro { background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 13px 15px; font-size: 0.86rem; color: var(--ink-soft); }
+  .guide-intro b { color: var(--ink); }
+  .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .guide-grid { grid-template-columns: 1fr; } }
+  .guide-item { border: 1px solid var(--line); border-radius: 11px; padding: 13px 15px; background: var(--surface-2); }
+  .guide-item h3 { margin: 0 0 5px; font-size: 0.9rem; }
+  .guide-item h3 b { color: var(--accent); font-family: var(--mono); margin-right: 7px; }
+  .guide-item p { margin: 0 0 8px; font-size: 0.83rem; color: var(--ink-soft); line-height: 1.45; }
+  .guide-item .ex { font-size: 0.78rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; }
+  .guide-item .ex b { color: var(--pos); }
+
+  .mini-btn {
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-soft);
+    border-radius: 8px; padding: 7px 11px; font-size: 0.78rem; cursor: pointer; font-family: var(--sans);
+  }
+  .mini-btn:hover { border-color: var(--accent); color: var(--ink); }
+  .legs { display: flex; flex-direction: column; gap: 8px; }
+  .leg { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .leg .rm { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 7px; width: 34px; height: 38px; cursor: pointer; font-size: 1rem; }
+  .leg .rm:hover { color: var(--neg); border-color: var(--neg); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: none; background: transparent; color: var(--ink-soft); padding: 7px 13px; font-size: 0.78rem; cursor: pointer; font-family: var(--sans); }
+  .seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  footer { margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.76rem; }
+  footer strong { color: var(--ink-soft); }
+  .note { display: flex; gap: 8px; align-items: flex-start; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">PS</div>
+      <div>
+        <h1>Pari<span>Stat</span></h1>
+        <p class="tagline">Calculateur de statistiques pour paris sportifs</p>
+      </div>
+    </div>
+    <button class="theme-btn" id="theme">◐ Thème</button>
+  </header>
+
+  <!-- Onglets -->
+  <nav class="tabs" id="top-tabs">
+    <button data-tab="t-live">📡 En direct</button>
+    <button data-tab="t-matchs" class="on">📅 Matchs du jour</button>
+    <button data-tab="t-paris">✓ Paris à tenter</button>
+    <button data-tab="t-raison">✎ Raisonnement</button>
+    <button data-tab="t-tickets">🎟 Tickets</button>
+    <button data-tab="t-guide">❓ Guide</button>
+  </nav>
+
+  <!-- En direct (API) -->
+  <section class="card daily tab-panel" id="t-live">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num" style="color:var(--pos)">📡</span><h2>Cotes en direct</h2></div>
+      <span class="daily-date" id="live-quota">—</span>
+    </div>
+    <div class="daily-banner">Vraies cotes de dizaines de bookmakers, marge retirée → proba réelle + avis automatique. Nécessite le serveur lancé et une clé API.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="field" style="flex:1;min-width:200px">
+        <label>Compétition</label>
+        <select id="live-sport" style="width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 12px;font-family:var(--sans);font-size:0.9rem">
+          <option value="soccer_uefa_nations_league">⚽ Ligue des Nations</option>
+          <option value="soccer_france_ligue_one">⚽ Ligue 1</option>
+          <option value="soccer_epl">⚽ Premier League</option>
+          <option value="soccer_spain_la_liga">⚽ Liga</option>
+          <option value="soccer_uefa_champs_league">⚽ Ligue des Champions</option>
+          <option value="basketball_euroleague">🏀 EuroLeague</option>
+          <option value="basketball_nba">🏀 NBA</option>
+          <option value="icehockey_nhl">🏒 NHL</option>
+          <option value="tennis_atp_aus_open_singles">🎾 Tennis ATP</option>
+        </select>
+      </div>
+      <button class="mini-btn" id="live-refresh" style="padding:10px 16px">↻ Charger les cotes</button>
+    </div>
+    <div id="live-status" class="hint">Clique « Charger les cotes » pour récupérer les matchs en direct.</div>
+    <div class="table-scroll">
+      <table class="matches">
+        <thead>
+          <tr><th>Match</th><th>Début</th><th>Cotes</th><th>Proba réelle</th><th>Avis</th><th>Marge</th></tr>
+        </thead>
+        <tbody id="live-body"></tbody>
+      </table>
+    </div>
+    <p class="hint">« Proba réelle » = marge du bookmaker retirée. Clique une ligne pour charger la cote du favori dans le module 02 (EV).</p>
+  </section>
+
+  <!-- Matchs du jour -->
+  <section class="card daily tab-panel active" id="t-matchs">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num">★</span><h2>Matchs du jour</h2></div>
+      <span class="daily-date" id="daily-date">01/10/2026</span>
+    </div>
+    <div class="daily-banner" id="daily-banner">Journée pauvre en valeur — 0 à 1 pari max, mise minime. On ne force pas.</div>
+    <div class="seg" id="daily-seg">
+      <button data-s="tous" class="on">Tous</button>
+      <button data-s="foot">⚽</button>
+      <button data-s="tennis">🎾</button>
+      <button data-s="basket">🏀</button>
+      <button data-s="hockey">🏒</button>
+    </div>
+    <div class="table-scroll">
+      <table class="matches">
+        <thead>
+          <tr><th>Match</th><th>Pari</th><th>Cote</th><th>Proba impl.</th><th>Risque</th><th>Verdict</th></tr>
+        </thead>
+        <tbody id="daily-body"></tbody>
+      </table>
+    </div>
+    <p class="hint">Instantané analysé (pas de flux live). Clique une ligne pour charger le match dans le module 07 et tester ta propre proba. Ne parier que si l'edge &gt; +5 %.</p>
+  </section>
+
+  <!-- Paris à tenter -->
+  <section class="card daily tab-panel" id="t-paris">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num" style="color:var(--pos)">✓</span><h2>Paris à tenter</h2></div>
+      <span class="daily-date">Sélection value — 01/10/2026</span>
+    </div>
+    <div class="daily-banner" style="background:var(--pos-soft);color:var(--pos)">Au-delà du 1X2 : BTTS, over/under, buteur, handicap. Value réelle, mais mise raisonnable — jamais tout sur un combiné.</div>
+    <div class="table-scroll">
+      <table class="matches">
+        <thead>
+          <tr><th>Match</th><th>Marché conseillé</th><th>Cote</th><th>Confiance</th><th>Pourquoi</th></tr>
+        </thead>
+        <tbody id="picks-body"></tbody>
+      </table>
+    </div>
+    <p class="hint">Clique une ligne pour charger la cote dans le module 02 (Valeur attendue) et vérifier l'EV avec ta propre proba. Confiance = mon niveau de conviction, pas une garantie.</p>
+  </section>
+
+  <!-- Raisonnement par match -->
+  <section class="card daily tab-panel" id="t-raison">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num">✎</span><h2>Raisonnement par match</h2></div>
+      <span class="daily-date">Pourquoi ces prédictions</span>
+    </div>
+    <div class="reason-list" id="reason-list"></div>
+  </section>
+
+  <!-- Tickets proposés -->
+  <section class="card daily tab-panel" id="t-tickets">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num" style="color:var(--accent)">🎟</span><h2>Tickets proposés</h2></div>
+      <span class="daily-date">Max 3 sélections — on ne s'emballe pas</span>
+    </div>
+    <div class="daily-banner">Plus on empile de sélections, plus la proba réelle chute. 2 sélections = raisonnable. Clique un ticket pour le charger dans le module 06 (Combiné).</div>
+    <div class="tickets" id="tickets"></div>
+    <p class="hint">Les cotes combinées multiplient le gain… mais aussi le risque. Mises indicatives volontairement basses.</p>
+  </section>
+
+  <!-- Guide -->
+  <section class="card daily tab-panel" id="t-guide">
+    <div class="daily-top">
+      <div class="card-head"><span class="card-num">❓</span><h2>Mode d'emploi</h2></div>
+      <span class="daily-date">À quoi sert chaque outil</span>
+    </div>
+    <div class="guide-intro">
+      Les <b>9 outils plus bas sur la page</b> sont ta boîte à vérification. Résumé :
+      le <b>haut de la page</b> (ces onglets) te dit <b>QUOI</b> parier ·
+      les <b>outils 01→09</b> te disent <b>SI</b> c'est un bon pari et <b>COMBIEN</b> miser sans te ruiner.
+      <br><br>
+      <b>Ordre conseillé :</b> 1) repère un match (onglets du haut) → 2) outil 07 ou 08 : a-t-il de la valeur ? →
+      3) outil 02 (EV) : confirme → 4) outil 03 (Kelly) : combien miser (petit !) → 5) outil 09 : vérifie le risque de ruine.
+    </div>
+    <div class="guide-grid">
+      <div class="guide-item"><h3><b>01</b>Cotes &amp; probabilité</h3><p>Traduit une cote en pourcentage de chances selon le bookmaker.</p><div class="ex">Cote 2,50 → <b>40 % de chances</b> que ça arrive.</div></div>
+      <div class="guide-item"><h3><b>02</b>Valeur attendue (EV)</h3><p>Le cœur de l'outil. Tu entres <b>ta</b> propre estimation (%) + la cote → il dit si le pari rapporte sur la durée.</p><div class="ex">Tu crois 45 %, cote 2,50 → <b>+1,25 € par pari</b> = bon pari.</div></div>
+      <div class="guide-item"><h3><b>03</b>Mise de Kelly</h3><p>Te dit <b>combien</b> miser sans te ruiner, selon ton capital. Prends toujours le demi-Kelly.</p><div class="ex">Capital 1000 € → miser <b>~42 €</b>, pas 500 €.</div></div>
+      <div class="guide-item"><h3><b>04</b>Marge du bookmaker</h3><p>Le book cache une marge dans ses cotes. Cet outil la retire pour voir les <b>vraies</b> probas.</p><div class="ex">Marge <b>3 %</b> = ce que le book prend au passage.</div></div>
+      <div class="guide-item"><h3><b>05</b>Arbitrage / Surebet</h3><p>Si deux sites ont des cotes différentes, parfois tu peux miser sur les 2 camps et gagner à coup sûr.</p><div class="ex">100 € répartis → <b>+3,73 € garantis</b>.</div></div>
+      <div class="guide-item"><h3><b>06</b>Pari combiné</h3><p>Calcule la cote et le gain quand tu empiles plusieurs paris sur un ticket — et la vraie proba.</p><div class="ex">3 paris → cote 5,67 mais <b>17 % de chances</b> seulement.</div></div>
+      <div class="guide-item"><h3><b>07</b>Analyse de match</h3><p>Tu entres la forme récente des 2 camps + la cote → verdict pariable ou pas, et niveau de risque.</p><div class="ex">6 victoires vs 4 → edge <b>+10,8 %</b>, pari avec valeur.</div></div>
+      <div class="guide-item"><h3><b>08</b>Modèle foot (Poisson)</h3><p>À partir des buts attendus de chaque équipe, calcule les probas 1-N-2, over/under et le score probable.</p><div class="ex">1,6 vs 1,1 → score probable <b>1-1</b>, Over 2,5 à 51 %.</div></div>
+      <div class="guide-item"><h3><b>09</b>Risque de ruine</h3><p>Simule 1500 fois ta stratégie → quelle chance de tout perdre. Mise grosse = danger visible.</p><div class="ex">Double ta mise → le <b>% rouge grimpe</b> fort.</div></div>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <!-- 1. Conversion de cotes -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">01</span><h2>Cotes &amp; probabilité implicite</h2></div>
+      <p class="hint">Entre une cote dans n'importe quel format, tout se convertit.</p>
+      <div class="field">
+        <label>Cote décimale (ex. 2.50)</label>
+        <input type="number" id="c-dec" step="0.01" value="2.50" min="1.01">
+      </div>
+      <div class="out">
+        <div class="out-row"><span class="k">Probabilité implicite</span><span class="v accent" id="c-prob">40.00 %</span></div>
+        <div class="out-row"><span class="k">Cote américaine</span><span class="v" id="c-us">+150</span></div>
+        <div class="out-row"><span class="k">Cote fractionnaire</span><span class="v" id="c-frac">3/2</span></div>
+        <div class="out-row"><span class="k">Gain pour 10 € misés</span><span class="v" id="c-pay">25.00 €</span></div>
+      </div>
+    </section>
+
+    <!-- 2. Valeur attendue (EV) -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">02</span><h2>Valeur attendue (EV)</h2></div>
+      <p class="hint">Ton estimation de proba vs la cote proposée : le pari a-t-il de la valeur ?</p>
+      <div class="row">
+        <div class="field"><label>Ta proba estimée (%)</label><input type="number" id="ev-p" step="0.1" value="45" min="0" max="100"></div>
+        <div class="field"><label>Cote décimale</label><input type="number" id="ev-d" step="0.01" value="2.50" min="1.01"></div>
+      </div>
+      <div class="field"><label>Mise (€)</label><input type="number" id="ev-s" step="1" value="10" min="0"></div>
+      <div class="out">
+        <div class="out-row out-hero"><span class="k">Valeur attendue</span><span class="v" id="ev-out">+1.25 €</span></div>
+        <div class="out-row"><span class="k">ROI par pari</span><span class="v" id="ev-roi">+12.50 %</span></div>
+        <div id="ev-verdict" class="verdict good">Value bet — proba &gt; proba implicite</div>
+      </div>
+    </section>
+
+    <!-- 3. Kelly -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">03</span><h2>Mise de Kelly</h2></div>
+      <p class="hint">Fraction optimale du capital à miser selon ton avantage.</p>
+      <div class="row">
+        <div class="field"><label>Ta proba estimée (%)</label><input type="number" id="k-p" step="0.1" value="45" min="0" max="100"></div>
+        <div class="field"><label>Cote décimale</label><input type="number" id="k-d" step="0.01" value="2.50" min="1.01"></div>
+      </div>
+      <div class="field"><label>Capital total (€)</label><input type="number" id="k-bank" step="10" value="1000" min="0"></div>
+      <div class="out">
+        <div class="out-row"><span class="k">Fraction de Kelly</span><span class="v accent" id="k-frac">12.50 %</span></div>
+        <div class="out-row out-hero"><span class="k">Mise conseillée (Kelly plein)</span><span class="v" id="k-full">125.00 €</span></div>
+        <div class="out-row"><span class="k">Demi-Kelly (plus prudent)</span><span class="v" id="k-half">62.50 €</span></div>
+      </div>
+    </section>
+
+    <!-- 4. Retrait de la marge -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">04</span><h2>Marge du bookmaker</h2></div>
+      <p class="hint">Retire la marge (« vig ») pour obtenir les probabilités réelles.</p>
+      <div class="seg" id="vig-seg">
+        <button data-n="2" class="on">2 issues</button>
+        <button data-n="3">3 issues (1N2)</button>
+      </div>
+      <div class="row-3" id="vig-inputs">
+        <div class="field"><label>Cote 1</label><input type="number" class="vig-c" step="0.01" value="2.10" min="1.01"></div>
+        <div class="field"><label>Cote 2</label><input type="number" class="vig-c" step="0.01" value="1.80" min="1.01"></div>
+        <div class="field" id="vig-c3" hidden><label>Cote 3</label><input type="number" class="vig-c" step="0.01" value="4.00" min="1.01"></div>
+      </div>
+      <div class="out">
+        <div class="out-row"><span class="k">Marge du bookmaker</span><span class="v accent" id="vig-margin">—</span></div>
+        <div class="out-row"><span class="k">Probas réelles (sans marge)</span><span class="v" id="vig-fair">—</span></div>
+        <div class="out-row"><span class="k">Cotes « justes »</span><span class="v" id="vig-odds">—</span></div>
+      </div>
+    </section>
+
+    <!-- 5. Arbitrage -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">05</span><h2>Arbitrage / Surebet</h2></div>
+      <p class="hint">Deux books opposés : y a-t-il un profit garanti et comment répartir ?</p>
+      <div class="row">
+        <div class="field"><label>Cote issue A</label><input type="number" id="arb-a" step="0.01" value="2.10" min="1.01"></div>
+        <div class="field"><label>Cote issue B</label><input type="number" id="arb-b" step="0.01" value="2.05" min="1.01"></div>
+      </div>
+      <div class="field"><label>Mise totale (€)</label><input type="number" id="arb-s" step="10" value="100" min="0"></div>
+      <div class="out">
+        <div id="arb-verdict" class="verdict good">Surebet détecté</div>
+        <div class="out-row"><span class="k">Miser sur A</span><span class="v" id="arb-sa">—</span></div>
+        <div class="out-row"><span class="k">Miser sur B</span><span class="v" id="arb-sb">—</span></div>
+        <div class="out-row out-hero"><span class="k">Profit garanti</span><span class="v" id="arb-profit">—</span></div>
+      </div>
+    </section>
+
+    <!-- 6. Combiné -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">06</span><h2>Pari combiné</h2></div>
+      <p class="hint">Combine plusieurs sélections et calcule la cote et le gain total.</p>
+      <div class="legs" id="legs">
+        <div class="leg"><input type="number" class="leg-c" step="0.01" value="1.80" min="1.01"><button class="rm" aria-label="Retirer">✕</button></div>
+        <div class="leg"><input type="number" class="leg-c" step="0.01" value="2.10" min="1.01"><button class="rm" aria-label="Retirer">✕</button></div>
+        <div class="leg"><input type="number" class="leg-c" step="0.01" value="1.50" min="1.01"><button class="rm" aria-label="Retirer">✕</button></div>
+      </div>
+      <button class="mini-btn" id="add-leg">+ Ajouter une sélection</button>
+      <div class="field"><label>Mise (€)</label><input type="number" id="combo-s" step="1" value="10" min="0"></div>
+      <div class="out">
+        <div class="out-row"><span class="k">Cote combinée</span><span class="v accent" id="combo-odds">—</span></div>
+        <div class="out-row"><span class="k">Probabilité implicite</span><span class="v" id="combo-prob">—</span></div>
+        <div class="out-row out-hero"><span class="k">Gain potentiel</span><span class="v" id="combo-pay">—</span></div>
+      </div>
+    </section>
+
+    <!-- 7. Analyse de match & risque -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">07</span><h2>Analyse de match &amp; taux de risque</h2></div>
+      <p class="hint">Entre la forme récente des 2 camps + la cote : verdict « pariable ou pas » et niveau de risque.</p>
+      <div class="seg" id="sport-seg">
+        <button data-s="foot" class="on">⚽ Foot</button>
+        <button data-s="tennis">🎾 Tennis</button>
+        <button data-s="basket">🏀 Basket</button>
+      </div>
+      <div class="row">
+        <div class="field"><label id="lbl-a">Forme camp A — victoires / <span id="lblN-a">10</span></label><input type="number" id="an-a" step="1" value="6" min="0"></div>
+        <div class="field"><label id="lbl-b">Forme camp B — victoires / <span id="lblN-b">10</span></label><input type="number" id="an-b" step="1" value="4" min="0"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Matchs analysés (par camp)</label><input type="number" id="an-n" step="1" value="10" min="1"></div>
+        <div class="field"><label>Cote du book sur A</label><input type="number" id="an-d" step="0.01" value="1.90" min="1.01"></div>
+      </div>
+      <div class="out">
+        <div class="out-row"><span class="k">Proba estimée (histo A vs B)</span><span class="v accent" id="an-prob">—</span></div>
+        <div class="out-row"><span class="k">Proba implicite du book</span><span class="v" id="an-imp">—</span></div>
+        <div class="out-row"><span class="k">Avantage (edge)</span><span class="v" id="an-edge">—</span></div>
+        <div class="out-row"><span class="k">Niveau de risque</span><span class="risk-label" id="an-risklabel">—</span></div>
+        <div class="risk-meter" id="an-meter"><span></span><span></span><span></span><span></span></div>
+        <div id="an-verdict" class="verdict warn">—</div>
+      </div>
+      <p class="hint">Proba = score de forme A / (forme A + forme B), ajusté par le nombre de matchs. Remplace-la par ta propre estimation si tu as mieux (blessures, confrontations directes, domicile…).</p>
+    </section>
+
+    <!-- 8. Modèle foot Poisson -->
+    <section class="card">
+      <div class="card-head"><span class="card-num">08</span><h2>Modèle foot — probas 1-N-2</h2></div>
+      <p class="hint">À partir des buts attendus (moyenne marquée récente) de chaque équipe, via la loi de Poisson.</p>
+      <div class="row">
+        <div class="field"><label>Buts attendus domicile</label><input type="number" id="po-h" step="0.05" value="1.60" min="0" max="8"></div>
+        <div class="field"><label>Buts attendus extérieur</label><input type="number" id="po-a" step="0.05" value="1.10" min="0" max="8"></div>
+      </div>
+      <div class="pois-grid">
+        <div class="pois-cell" id="po-1"><div class="pk">1 · Domicile</div><div class="pv">—</div></div>
+        <div class="pois-cell" id="po-n"><div class="pk">N · Nul</div><div class="pv">—</div></div>
+        <div class="pois-cell" id="po-2"><div class="pk">2 · Extérieur</div><div class="pv">—</div></div>
+      </div>
+      <div class="out">
+        <div class="out-row"><span class="k">Cotes « justes » (1 / N / 2)</span><span class="v" id="po-odds">—</span></div>
+        <div class="out-row"><span class="k">+1,5 but / Over 2,5 buts</span><span class="v" id="po-ou">—</span></div>
+        <div class="out-row"><span class="k">Score le plus probable</span><span class="v accent" id="po-score">—</span></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 9. Risque de ruine -->
+  <section class="card" style="margin-top:18px">
+    <div class="card-head"><span class="card-num">09</span><h2>Risque de ruine &amp; simulation</h2></div>
+    <p class="hint">Combien de fois, en rejouant la même stratégie, finirais-tu à zéro ? On simule 1 500 scénarios.</p>
+    <div class="ruin-inputs">
+      <div class="field"><label>Capital (€)</label><input type="number" id="r-cap" step="50" value="1000" min="1"></div>
+      <div class="field"><label>Mise / pari (€)</label><input type="number" id="r-stake" step="5" value="50" min="1"></div>
+      <div class="field"><label>Taux de réussite (%)</label><input type="number" id="r-win" step="1" value="55" min="1" max="99"></div>
+      <div class="field"><label>Cote moyenne</label><input type="number" id="r-odds" step="0.05" value="2.00" min="1.01"></div>
+      <div class="field"><label>Nombre de paris</label><input type="number" id="r-n" step="10" value="100" min="1" max="1000"></div>
+    </div>
+    <div class="ruin-out">
+      <div class="ruin-stat"><div class="k">Probabilité de tout perdre</div><div class="v" id="r-ruin">—</div></div>
+      <div class="ruin-stat"><div class="k">Gain espéré / pari (EV)</div><div class="v" id="r-ev">—</div></div>
+      <div class="ruin-stat"><div class="k">Capital final médian</div><div class="v" id="r-median">—</div></div>
+    </div>
+    <canvas id="ruin-canvas"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--muted)"></i> trajectoires simulées</span>
+      <span><i style="background:var(--neg)"></i> scénarios ruinés</span>
+      <span><i style="background:var(--accent)"></i> capital de départ</span>
+    </div>
+    <p class="hint">La « mise par pari » est ce qui compte le plus : double-la et le risque de ruine explose, même avec un bon taux de réussite. C'est pourquoi on mise petit (demi-Kelly), jamais gros.</p>
+  </section>
+
+  <!-- 10. Simulateur d'objectif -->
+  <section class="card" style="margin-top:18px">
+    <div class="card-head"><span class="card-num">10</span><h2>Simulateur d'objectif</h2></div>
+    <p class="hint">La vraie façon de faire de grosses marges : les intérêts composés. Vise un petit gain régulier, laisse le temps travailler.</p>
+    <div class="row-3">
+      <div class="field"><label>Capital de départ (€)</label><input type="number" id="o-cap" step="10" value="557" min="1"></div>
+      <div class="field"><label>Gain mensuel visé (%)</label><input type="number" id="o-rate" step="0.5" value="5" min="0.1"></div>
+      <div class="field"><label>Objectif (€)</label><input type="number" id="o-goal" step="100" value="1000" min="1"></div>
+    </div>
+    <div class="ruin-out">
+      <div class="ruin-stat"><div class="k">Temps pour atteindre l'objectif</div><div class="v accent" id="o-time">—</div></div>
+      <div class="ruin-stat"><div class="k">Capital dans 12 mois</div><div class="v" id="o-12">—</div></div>
+      <div class="ruin-stat"><div class="k">Capital dans 24 mois</div><div class="v" id="o-24">—</div></div>
+    </div>
+    <canvas id="obj-canvas"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i> croissance du capital</span>
+      <span><i style="background:var(--pos)"></i> objectif</span>
+    </div>
+    <p class="hint">+5 %/mois double ton capital en ~14 mois, sans risque de ruine. C'est lent mais ça marche — contrairement aux gros combinés qui le vident.</p>
+  </section>
+
+  <footer>
+    <div class="note">
+      <span>⚠️</span>
+      <span><strong>Outil pédagogique.</strong> Ces calculs reposent sur <em>tes</em> estimations de probabilité : aucune formule ne garantit un gain. Les paris comportent un risque de perte. Joue avec modération — <strong>09 74 75 13 13</strong> (Joueurs Info Service, appel non surtaxé).</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // ---------- Thème ----------
+  const root = document.documentElement;
+  document.getElementById('theme').addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme')
+      || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---------- Helpers ----------
+  const $ = id => document.getElementById(id);
+  const num = el => parseFloat(el.value);
+  const pct = x => (x * 100).toFixed(2) + ' %';
+  const eur = x => (x >= 0 ? '' : '') + x.toFixed(2) + ' €';
+  const signed = x => (x >= 0 ? '+' : '') + x.toFixed(2);
+  function gcd(a, b) { return b < 1e-9 ? a : gcd(b, a % b); }
+  function toFraction(dec) {
+    const f = dec - 1;
+    let best = '', bestErr = 1e9;
+    for (let d = 1; d <= 50; d++) {
+      const n = Math.round(f * d);
+      const err = Math.abs(f - n / d);
+      if (err < bestErr) { bestErr = err; best = n + '/' + d; }
+      if (err < 1e-9) break;
+    }
+    return best;
+  }
+  function toAmerican(dec) {
+    if (!(dec > 1)) return '—';
+    return dec >= 2 ? '+' + Math.round((dec - 1) * 100) : '−' + Math.round(100 / (dec - 1));
+  }
+
+  // ---------- 01 Conversion ----------
+  function conv() {
+    const d = num($('c-dec'));
+    if (!(d > 1)) return;
+    $('c-prob').textContent = pct(1 / d);
+    $('c-us').textContent = toAmerican(d);
+    $('c-frac').textContent = toFraction(d);
+    $('c-pay').textContent = (d * 10).toFixed(2) + ' €';
+  }
+  $('c-dec').addEventListener('input', conv);
+
+  // ---------- 02 EV ----------
+  function ev() {
+    const p = num($('ev-p')) / 100, d = num($('ev-d')), s = num($('ev-s'));
+    if (!(d > 1) || isNaN(p) || isNaN(s)) return;
+    const value = s * (p * d - 1);
+    const roi = (p * d - 1) * 100;
+    const el = $('ev-out'), roiEl = $('ev-roi'), v = $('ev-verdict');
+    el.textContent = signed(value) + ' €';
+    roiEl.textContent = (roi >= 0 ? '+' : '') + roi.toFixed(2) + ' %';
+    const good = value > 0;
+    el.className = 'v ' + (good ? 'pos' : 'neg');
+    roiEl.className = 'v ' + (good ? 'pos' : 'neg');
+    v.className = 'verdict ' + (good ? 'good' : 'bad');
+    v.textContent = good ? 'Value bet — ta proba > proba implicite' : 'Pas de valeur — EV négative';
+  }
+  ['ev-p', 'ev-d', 'ev-s'].forEach(id => $(id).addEventListener('input', ev));
+
+  // ---------- 03 Kelly ----------
+  function kelly() {
+    const p = num($('k-p')) / 100, d = num($('k-d')), bank = num($('k-bank'));
+    if (!(d > 1) || isNaN(p) || isNaN(bank)) return;
+    const b = d - 1, q = 1 - p;
+    let f = (b * p - q) / b;
+    const fracEl = $('k-frac'), fullEl = $('k-full');
+    if (f <= 0) {
+      fracEl.textContent = '0 % (ne pas miser)';
+      fracEl.className = 'v neg';
+      fullEl.textContent = '0.00 €'; $('k-half').textContent = '0.00 €';
+      return;
+    }
+    fracEl.className = 'v accent';
+    fracEl.textContent = (f * 100).toFixed(2) + ' %';
+    fullEl.textContent = (f * bank).toFixed(2) + ' €';
+    $('k-half').textContent = (f * bank / 2).toFixed(2) + ' €';
+  }
+  ['k-p', 'k-d', 'k-bank'].forEach(id => $(id).addEventListener('input', kelly));
+
+  // ---------- 04 Marge ----------
+  let vigN = 2;
+  document.querySelectorAll('#vig-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#vig-seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      vigN = +btn.dataset.n;
+      $('vig-c3').hidden = vigN === 2;
+      vig();
+    });
+  });
+  function vig() {
+    const inputs = [...document.querySelectorAll('.vig-c')].slice(0, vigN);
+    const odds = inputs.map(i => num(i));
+    if (odds.some(o => !(o > 1))) return;
+    const imp = odds.map(o => 1 / o);
+    const over = imp.reduce((a, b) => a + b, 0);
+    const margin = (over - 1) * 100;
+    const fair = imp.map(i => i / over);
+    $('vig-margin').textContent = margin.toFixed(2) + ' %';
+    $('vig-fair').textContent = fair.map(f => (f * 100).toFixed(1) + '%').join(' · ');
+    $('vig-odds').textContent = fair.map(f => (1 / f).toFixed(2)).join(' · ');
+  }
+  document.querySelectorAll('.vig-c').forEach(i => i.addEventListener('input', vig));
+
+  // ---------- 05 Arbitrage ----------
+  function arb() {
+    const a = num($('arb-a')), b = num($('arb-b')), s = num($('arb-s'));
+    if (!(a > 1) || !(b > 1) || isNaN(s)) return;
+    const inv = 1 / a + 1 / b;
+    const v = $('arb-verdict');
+    const sa = s * (1 / a) / inv, sb = s * (1 / b) / inv;
+    const payout = sa * a; // = sb * b, gain total identique quelle que soit l'issue
+    const profit = payout - s;
+    $('arb-sa').textContent = sa.toFixed(2) + ' €';
+    $('arb-sb').textContent = sb.toFixed(2) + ' €';
+    const pEl = $('arb-profit');
+    pEl.textContent = signed(profit) + ' €  (' + (profit / s * 100).toFixed(2) + ' %)';
+    if (inv < 1) {
+      v.className = 'verdict good'; v.textContent = 'Surebet — profit garanti ✓';
+      pEl.className = 'v pos';
+    } else {
+      v.className = 'verdict bad'; v.textContent = 'Pas d\'arbitrage (marge ' + ((inv - 1) * 100).toFixed(2) + ' %)';
+      pEl.className = 'v neg';
+    }
+  }
+  ['arb-a', 'arb-b', 'arb-s'].forEach(id => $(id).addEventListener('input', arb));
+
+  // ---------- 06 Combiné ----------
+  const legsBox = $('legs');
+  function bindLeg(leg) {
+    leg.querySelector('.leg-c').addEventListener('input', combo);
+    leg.querySelector('.rm').addEventListener('click', () => {
+      if (legsBox.children.length > 1) { leg.remove(); combo(); }
+    });
+  }
+  $('add-leg').addEventListener('click', () => {
+    const leg = document.createElement('div');
+    leg.className = 'leg';
+    leg.innerHTML = '<input type="number" class="leg-c" step="0.01" value="2.00" min="1.01"><button class="rm" aria-label="Retirer">✕</button>';
+    legsBox.appendChild(leg);
+    bindLeg(leg);
+    combo();
+  });
+  function combo() {
+    const odds = [...document.querySelectorAll('.leg-c')].map(i => num(i));
+    if (odds.some(o => !(o > 1))) return;
+    const total = odds.reduce((a, b) => a * b, 1);
+    const s = num($('combo-s'));
+    $('combo-odds').textContent = total.toFixed(2);
+    $('combo-prob').textContent = pct(1 / total);
+    $('combo-pay').textContent = (total * s).toFixed(2) + ' €';
+  }
+  document.querySelectorAll('.leg').forEach(bindLeg);
+
+  // ---------- 07 Analyse & risque ----------
+  const sportWords = {
+    foot:   { a: 'équipe A', b: 'équipe B', unit: 'matchs' },
+    tennis: { a: 'joueur A', b: 'joueur B', unit: 'matchs' },
+    basket: { a: 'équipe A', b: 'équipe B', unit: 'matchs' }
+  };
+  const RISK = [
+    { label: 'Faible',      color: 'var(--pos)' },
+    { label: 'Modéré',      color: 'var(--accent)' },
+    { label: 'Élevé',       color: '#e0863a' },
+    { label: 'Très élevé',  color: 'var(--neg)' }
+  ];
+  document.querySelectorAll('#sport-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sport-seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      analyse();
+    });
+  });
+  function analyse() {
+    const a = num($('an-a')), b = num($('an-b')), n = num($('an-n')), d = num($('an-d'));
+    $('lblN-a').textContent = isNaN(n) ? '—' : n;
+    $('lblN-b').textContent = isNaN(n) ? '—' : n;
+    if (isNaN(a) || isNaN(b) || !(n >= 1) || !(d > 1)) return;
+    // Taux de victoire lissés (Laplace) puis force relative
+    const rateA = (a + 1) / (n + 2), rateB = (b + 1) / (n + 2);
+    const p = rateA / (rateA + rateB);
+    const imp = 1 / d;
+    const edge = p * d - 1;
+    $('an-prob').textContent = (p * 100).toFixed(1) + ' %';
+    $('an-imp').textContent = (imp * 100).toFixed(1) + ' %';
+    const edgeEl = $('an-edge');
+    edgeEl.textContent = (edge >= 0 ? '+' : '') + (edge * 100).toFixed(1) + ' %';
+    edgeEl.className = 'v ' + (edge > 0 ? 'pos' : 'neg');
+
+    // Niveau de risque (probabilité de perte)
+    let tier = p >= 0.62 ? 0 : p >= 0.50 ? 1 : p >= 0.40 ? 2 : 3;
+    const rl = $('an-risklabel');
+    rl.textContent = RISK[tier].label;
+    rl.style.color = RISK[tier].color;
+    [...$('an-meter').children].forEach((seg, i) => {
+      seg.style.background = i <= tier ? RISK[tier].color : 'var(--line)';
+    });
+
+    const v = $('an-verdict');
+    if (edge > 0.05) { v.className = 'verdict good'; v.textContent = '✓ Pari avec valeur — edge ' + (edge * 100).toFixed(1) + '% (risque ' + RISK[tier].label.toLowerCase() + ')'; }
+    else if (edge > 0) { v.className = 'verdict warn'; v.textContent = '≈ Valeur limite — edge faible, à jouer petit'; }
+    else { v.className = 'verdict bad'; v.textContent = '✕ Déconseillé — la cote ne paie pas assez le risque'; }
+  }
+  ['an-a', 'an-b', 'an-n', 'an-d'].forEach(id => $(id).addEventListener('input', analyse));
+
+  // ---------- 08 Poisson foot ----------
+  function poisson(k, l) { return Math.exp(-l) * Math.pow(l, k) / factorial(k); }
+  function factorial(k) { let r = 1; for (let i = 2; i <= k; i++) r *= i; return r; }
+  function pois() {
+    const lh = num($('po-h')), la = num($('po-a'));
+    if (isNaN(lh) || isNaN(la) || lh < 0 || la < 0) return;
+    const K = 10;
+    const ph = [], pa = [];
+    for (let i = 0; i <= K; i++) { ph[i] = poisson(i, lh); pa[i] = poisson(i, la); }
+    let p1 = 0, pN = 0, p2 = 0, o15 = 0, o25 = 0, best = 0, bh = 0, ba = 0;
+    for (let i = 0; i <= K; i++) for (let j = 0; j <= K; j++) {
+      const pr = ph[i] * pa[j];
+      if (i > j) p1 += pr; else if (i === j) pN += pr; else p2 += pr;
+      if (i + j >= 2) o15 += pr;
+      if (i + j >= 3) o25 += pr;
+      if (pr > best) { best = pr; bh = i; ba = j; }
+    }
+    const fmt = x => (x * 100).toFixed(1) + '%';
+    $('po-1').querySelector('.pv').textContent = fmt(p1);
+    $('po-n').querySelector('.pv').textContent = fmt(pN);
+    $('po-2').querySelector('.pv').textContent = fmt(p2);
+    const mx = Math.max(p1, pN, p2);
+    [['po-1', p1], ['po-n', pN], ['po-2', p2]].forEach(([id, v]) =>
+      $(id).classList.toggle('best', v === mx));
+    $('po-odds').textContent = (1 / p1).toFixed(2) + ' / ' + (1 / pN).toFixed(2) + ' / ' + (1 / p2).toFixed(2);
+    $('po-ou').textContent = 'O1.5 ' + fmt(o15) + ' · O2.5 ' + fmt(o25);
+    $('po-score').textContent = bh + ' - ' + ba + '  (' + fmt(best) + ')';
+  }
+  ['po-h', 'po-a'].forEach(id => $(id).addEventListener('input', pois));
+
+  // ---------- Matchs du jour (instantané analysé) ----------
+  const DAILY = [
+    { sport: 'foot',   ico: '⚽', name: 'Allemagne – Serbie',        pick: 'Allemagne',   cote: 1.20, risk: 'skip', verdict: 'Favori écrasant, aucune valeur.' },
+    { sport: 'foot',   ico: '⚽', name: 'Grèce – Pays-Bas',          pick: 'Pays-Bas',    cote: 2.00, risk: 'skip', verdict: 'Coin-flip, marché efficient — pas d\'edge.' },
+    { sport: 'foot',   ico: '⚽', name: 'Danemark – Portugal',       pick: 'Portugal',    cote: 2.00, risk: 'mid',  verdict: 'Favori trop court, Parken hostile — passer.' },
+    { sport: 'foot',   ico: '⚽', name: 'Pays de Galles – Norvège',  pick: 'Norvège',     cote: 1.42, risk: 'mid',  verdict: 'Haaland favori mais à l\'extérieur — prudence.' },
+    { sport: 'foot',   ico: '⚽', name: 'Irlande – Autriche (B)',    pick: 'Autriche',    cote: 2.10, risk: 'mid',  verdict: 'Autriche en tête (6 pts), mais Irlande accrocheuse à l\'Aviva.' },
+    { sport: 'foot',   ico: '⚽', name: 'Israël – Kosovo (B)',       pick: 'Kosovo',      cote: 2.15, risk: 'mid',  verdict: 'Israël 0 pt et sur terrain neutre — léger avantage Kosovo.' },
+    { sport: 'tennis', ico: '🎾', name: 'China Open — 1er tour',     pick: '—',           cote: null, risk: 'skip', verdict: 'Cotes trop basses au 1er tour — attendre les 1/8.' },
+    { sport: 'basket', ico: '🏀', name: 'Olympiakos – Virtus Bologne', pick: 'Olympiakos', cote: 1.23, risk: 'skip', verdict: 'Trop court, no value.' },
+    { sport: 'basket', ico: '🏀', name: 'Real Madrid – Hapoel T-A',  pick: 'Real Madrid', cote: 1.67, risk: 'mid',  verdict: 'Favori logique mais paie peu.' },
+    { sport: 'basket', ico: '🏀', name: 'Anadolu Efes – Étoile Rouge', pick: 'Efes',      cote: 1.73, risk: 'mid',  verdict: 'Le plus équilibré — avantage domicile.' },
+    { sport: 'basket', ico: '🏀', name: 'Žalgiris – Paris',          pick: '—',           cote: null, risk: 'skip', verdict: 'Cotes indisponibles.' },
+    { sport: 'hockey', ico: '🏒', name: 'Chicago – Utah',            pick: 'Utah',        cote: 1.52, risk: 'mid',  verdict: 'Ouverture de saison — forte incertitude.' },
+    { sport: 'hockey', ico: '🏒', name: 'Edmonton – Vancouver',      pick: 'Edmonton',    cote: 1.51, risk: 'mid',  verdict: 'Favori mais 1re journée — fiabilité faible.' },
+    { sport: 'hockey', ico: '🏒', name: 'New Jersey – Philadelphie', pick: 'New Jersey',  cote: 1.70, risk: 'high', verdict: 'Coin-flip d\'ouverture.' },
+    { sport: 'hockey', ico: '🏒', name: 'Seattle – Calgary',         pick: 'Calgary',     cote: 1.87, risk: 'high', verdict: 'Pile ou face — s\'abstenir.' }
+  ];
+  const RISKMAP = {
+    skip: { cls: 'b-skip', txt: 'À éviter' },
+    low:  { cls: 'b-low',  txt: 'Faible' },
+    mid:  { cls: 'b-mid',  txt: 'Modéré' },
+    high: { cls: 'b-high', txt: 'Élevé' }
+  };
+  let dailyFilter = 'tous';
+  function renderDaily() {
+    const body = $('daily-body');
+    body.innerHTML = '';
+    DAILY.filter(m => dailyFilter === 'tous' || m.sport === dailyFilter).forEach(m => {
+      const r = RISKMAP[m.risk];
+      const cote = m.cote ? m.cote.toFixed(2) : '—';
+      const imp = m.cote ? (100 / m.cote).toFixed(1) + ' %' : '—';
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><span class="m-name">' + m.ico + ' ' + m.name + '</span></td>' +
+        '<td class="m-pick">' + m.pick + '</td>' +
+        '<td class="m-num">' + cote + '</td>' +
+        '<td class="m-num">' + imp + '</td>' +
+        '<td><span class="badge ' + r.cls + '">' + r.txt + '</span></td>' +
+        '<td class="m-verdict">' + m.verdict + '</td>';
+      if (m.cote) {
+        tr.style.cursor = 'pointer';
+        tr.title = 'Charger cette cote dans le module 07';
+        tr.addEventListener('click', () => {
+          $('an-d').value = m.cote;
+          analyse();
+          $('an-d').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          $('an-d').focus();
+        });
+      }
+      body.appendChild(tr);
+    });
+  }
+  document.querySelectorAll('#daily-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#daily-seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      dailyFilter = btn.dataset.s;
+      renderDaily();
+    });
+  });
+
+  // ---------- Paris à tenter ----------
+  const PICKS = [
+    { ico: '⚽', match: 'Danemark – Portugal',      market: 'Les 2 équipes marquent — OUI', cote: 1.60, conf: 3, why: 'Les 2 nations ont marqué dans leurs 2 matchs de LN.' },
+    { ico: '⚽', match: 'Allemagne – Serbie',        market: 'Les 2 équipes marquent — OUI', cote: 1.80, conf: 3, why: 'Tadić/Jović de retour ; l\'Allemagne presse haut et s\'ouvre.' },
+    { ico: '⚽', match: 'Pays de Galles – Norvège',  market: 'Haaland buteur (anytime)',      cote: 1.45, conf: 3, why: '65 buts en 57 sélections — menace permanente.' },
+    { ico: '⚽', match: 'Pays de Galles – Norvège',  market: 'Norvège gagne & +1,5 but',      cote: 1.65, conf: 2, why: 'Norvège nettement supérieure, cherche à marquer plusieurs fois.' },
+    { ico: '⚽', match: 'Danemark – Portugal',       market: 'Over 2,5 buts',                 cote: 1.70, conf: 2, why: 'Défense danoise diminuée, deux attaques tranchantes.' },
+    { ico: '⚽', match: 'Grèce – Pays-Bas',          market: 'Les 2 équipes marquent — OUI', cote: 1.67, conf: 2, why: 'Pays-Bas : 100 % de BTTS sur les 5 derniers matchs.' },
+    { ico: '⚽', match: 'Israël – Kosovo',           market: 'Kosovo vainqueur',              cote: 2.15, conf: 1, why: 'Israël 0 pt et sans public ; Kosovo mieux armé mais rien de sûr.' },
+    { ico: '🏒', match: 'Edmonton – Vancouver',      market: 'Over 6,5 buts',                 cote: 1.87, conf: 2, why: 'Fini 6-5 ; deux attaques, défenses tendres en ouverture.' },
+    { ico: '🏒', match: 'Chicago – Utah',            market: 'Utah −1,5 (handicap)',          cote: 2.00, conf: 2, why: 'Profondeur offensive + avantage de la glace.' },
+    { ico: '🎾', match: 'China Open (1er tour)',     market: 'Aucun pari conseillé',          cote: null, conf: 0, why: 'Cotes trop basses au 1er tour — attendre les tours avancés.' }
+  ];
+  const CONF = {
+    3: { cls: 'b-low',  txt: 'Value forte ✓✓✓' },
+    2: { cls: 'b-low',  txt: 'Value ✓✓' },
+    1: { cls: 'b-mid',  txt: 'Spéculatif ✓' },
+    0: { cls: 'b-skip', txt: 'À éviter' }
+  };
+  function renderPicks() {
+    const body = $('picks-body');
+    body.innerHTML = '';
+    PICKS.forEach(p => {
+      const c = CONF[p.conf];
+      const cote = p.cote ? p.cote.toFixed(2) : '—';
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><span class="m-name">' + p.ico + ' ' + p.match + '</span></td>' +
+        '<td class="m-pick">' + p.market + '</td>' +
+        '<td class="m-num">' + cote + '</td>' +
+        '<td><span class="badge ' + c.cls + '">' + c.txt + '</span></td>' +
+        '<td class="m-verdict">' + p.why + '</td>';
+      if (p.cote) {
+        tr.style.cursor = 'pointer';
+        tr.title = 'Charger cette cote dans le module 02 (EV)';
+        tr.addEventListener('click', () => {
+          $('ev-d').value = p.cote;
+          ev();
+          $('ev-d').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          $('ev-p').focus();
+        });
+      }
+      body.appendChild(tr);
+    });
+  }
+
+  // ---------- Raisonnement par match ----------
+  const REASONING = [
+    {
+      t: '⚽ Danemark – Portugal',
+      pts: [
+        'Portugal invaincu (2 victoires / 2), ouvre le score avant la 30e à chaque fois : équipe lancée.',
+        'Effectif portugais plus profond ; l\'absence de Ronaldo ne l\'affaiblit quasiment pas.',
+        'Danemark à domicile (Parken bouillant) mais défense décimée : A. Christensen et Kristensen (suspendu) absents.',
+        'Les DEUX équipes ont marqué dans leurs 2 matchs de Ligue des Nations.'
+      ],
+      pred: 'Prédiction → Les 2 marquent OUI (1,60) + Over 2,5 (1,70). On évite la victoire sèche du Portugal : 2,00 ne paie pas assez le contexte extérieur.',
+      skip: false
+    },
+    {
+      t: '⚽ Allemagne – Serbie',
+      pts: [
+        'Allemagne archi-favorite (1,20) : injouable en vainqueur sec, zéro valeur.',
+        'Mais elle presse très haut et laisse des espaces dans le dos.',
+        'Serbie retrouve Tadić et Jović : de quoi marquer au moins une fois.',
+        '4 des 5 derniers matchs de la Serbie ont vu les deux équipes marquer.'
+      ],
+      pred: 'Prédiction → Les 2 marquent OUI (1,80). L\'Allemagne gagnera sans doute, mais la valeur est sur le BTTS, pas sur le 1.',
+      skip: false
+    },
+    {
+      t: '⚽ Pays de Galles – Norvège',
+      pts: [
+        'Norvège nettement supérieure sur le papier, portée par Haaland (65 buts en 57 sélections).',
+        'Galles accrocheur à domicile mais pauvre offensivement.',
+        'La Norvège cherche systématiquement à marquer plusieurs buts.'
+      ],
+      pred: 'Prédiction → Haaland buteur (1,45) ; alternative : Norvège gagne & +1,5 but (1,65). Value sur le buteur plutôt que sur un score serré.',
+      skip: false
+    },
+    {
+      t: '⚽ Grèce – Pays-Bas',
+      pts: [
+        'Pays-Bas favoris (2,20) : une seule défaite sur leurs 22 derniers matchs.',
+        'Mais les Pays-Bas ont vu les 2 équipes marquer dans leurs 5 derniers (100 % BTTS).',
+        'Grèce à domicile, capable de marquer ; ouverture de groupe souvent prudente.'
+      ],
+      pred: 'Prédiction → Les 2 marquent OUI (1,67). La victoire néerlandaise à 2,20 est trop juste ; la valeur est sur le BTTS.',
+      skip: false
+    },
+    {
+      t: '⚽ Irlande – Autriche (Ligue B)',
+      pts: [
+        'Autriche en tête du groupe (6 pts), a battu Kosovo et Israël 3-1.',
+        'Irlande irrégulière (défaite 0-1 vs Kosovo, puis 3-0 vs Israël) mais solide à l\'Aviva.',
+        'Le public de Dublin resserre souvent les écarts.'
+      ],
+      pred: 'Prédiction → Prudence. Autriche à 2,10 a de la valeur sur le papier, mais à domicile l\'Irlande rend le match indécis. Mise minime ou s\'abstenir.',
+      skip: true
+    },
+    {
+      t: '⚽ Israël – Kosovo (Ligue B)',
+      pts: [
+        'Match sur terrain neutre (Debrecen, Hongrie) : pas d\'avantage du terrain pour Israël.',
+        'Israël 0 point et en méforme ; Kosovo mieux classé.',
+        'Historique récent serré entre ces nations.'
+      ],
+      pred: 'Prédiction → Kosovo vainqueur (2,15) en pari spéculatif. Rien de sûr : petite mise seulement.',
+      skip: false
+    },
+    {
+      t: '🏀 EuroLeague — 1re journée',
+      pts: [
+        'Olympiakos (1,23) et Real Madrid (1,67) favoris logiques mais cotes trop courtes.',
+        'Anadolu Efes – Étoile Rouge est le plus équilibré (avantage glace Efes ~1,73).',
+        'Début de saison = peu de repères sur la forme réelle et les rotations.'
+      ],
+      pred: 'Prédiction → Pas de pari conseillé. Trop d\'incertitude en ouverture ; au mieux une mise minime sur Efes.',
+      skip: true
+    },
+    {
+      t: '🏒 Edmonton – Vancouver',
+      pts: [
+        'Deux attaques réputées, défenses perfectibles en tout début de saison.',
+        'Le match s\'est fini 6-5 : profil très ouvert.',
+        'Rythme élevé attendu dès l\'entame du championnat.'
+      ],
+      pred: 'Prédiction → Over 6,5 buts (1,87). Le marché le plus lisible de la soirée hockey.',
+      skip: false
+    },
+    {
+      t: '🏒 Chicago – Utah',
+      pts: [
+        'Utah : profondeur offensive supérieure et avantage de la glace.',
+        'Chicago a paru défensivement dépassé à l\'ouverture.'
+      ],
+      pred: 'Prédiction → Utah −1,5 (handicap, ~2,00). On prend la marge plutôt que la simple victoire trop courte.',
+      skip: false
+    },
+    {
+      t: '🎾 China Open — 1er tour',
+      pts: [
+        'Beaucoup de têtes de série à cotes 1,10–1,30 : rapport risque/gain mauvais.',
+        'Au 1er tour, surprises fréquentes et niveau de jeu irrégulier.'
+      ],
+      pred: 'Prédiction → S\'abstenir. On attend les 1/8 et 1/4, plus lisibles.',
+      skip: true
+    }
+  ];
+  function renderReason() {
+    const box = $('reason-list');
+    box.innerHTML = '';
+    REASONING.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'reason';
+      el.innerHTML = '<h3>' + r.t + '</h3><ul>' +
+        r.pts.map(p => '<li>' + p + '</li>').join('') +
+        '</ul><div class="pred' + (r.skip ? ' skip' : '') + '">' + r.pred + '</div>';
+      box.appendChild(el);
+    });
+  }
+
+  // ---------- Tickets proposés ----------
+  const TICKETS = [
+    { name: 'Prudent', tag: '2 sél.', color: 'var(--pos)', bg: 'var(--pos-soft)', stake: 10,
+      legs: [{ l: 'Haaland buteur', c: 1.45, p: 0.75 }, { l: 'All–Serbie : 2 marquent', c: 1.80, p: 0.58 }] },
+    { name: 'Équilibré', tag: '2 sél.', color: 'var(--accent)', bg: 'var(--accent-soft)', stake: 10,
+      legs: [{ l: 'Dan–Por : 2 marquent', c: 1.60, p: 0.65 }, { l: 'Edm–Van : Over 6,5', c: 1.87, p: 0.55 }] },
+    { name: 'Ambitieux', tag: '3 sél.', color: 'var(--neg)', bg: 'var(--neg-soft)', stake: 5,
+      legs: [{ l: 'Haaland buteur', c: 1.45, p: 0.75 }, { l: 'Dan–Por : 2 marquent', c: 1.60, p: 0.65 }, { l: 'All–Ser : 2 marquent', c: 1.80, p: 0.58 }] },
+    { name: 'Jackpot 🎰', tag: '5 sél. · loterie', color: 'var(--neg)', bg: 'var(--neg-soft)', stake: 5,
+      note: 'Billet loterie : ~1 chance sur 10. Mise 5 € max, de l\'argent que tu acceptes de perdre.',
+      legs: [
+        { l: 'Haaland buteur', c: 1.45, p: 0.75 },
+        { l: 'Dan–Por : 2 marquent', c: 1.60, p: 0.65 },
+        { l: 'All–Ser : 2 marquent', c: 1.80, p: 0.58 },
+        { l: 'Grè–P-B : 2 marquent', c: 1.67, p: 0.62 },
+        { l: 'Edm–Van : Over 6,5', c: 1.87, p: 0.55 }
+      ] }
+  ];
+  function renderTickets() {
+    const box = $('tickets');
+    box.innerHTML = '';
+    TICKETS.forEach(t => {
+      const cote = t.legs.reduce((a, b) => a * b.c, 1);
+      const trueP = t.legs.reduce((a, b) => a * (b.p || 1), 1) * 100;
+      const impl = 100 / cote;
+      const realCls = trueP >= impl ? 'pos' : 'neg';
+      const el = document.createElement('div');
+      el.className = 'ticket';
+      el.innerHTML =
+        '<h3>Ticket ' + t.name + '<span class="tag" style="background:' + t.bg + ';color:' + t.color + '">' + t.tag + '</span></h3>' +
+        '<ul>' + t.legs.map(l => '<li><span>' + l.l + '</span><span class="lc">' + l.c.toFixed(2) + '</span></li>').join('') + '</ul>' +
+        (t.note ? '<div class="pred skip" style="font-size:0.74rem">⚠️ ' + t.note + '</div>' : '') +
+        '<div class="tfoot">' +
+        '<div class="trow"><span>Cote combinée</span><span class="v big">' + cote.toFixed(2) + '</span></div>' +
+        '<div class="trow"><span>Proba implicite</span><span class="v">' + impl.toFixed(1) + ' %</span></div>' +
+        '<div class="trow"><span>Proba réelle estimée</span><span class="v ' + realCls + '">' + trueP.toFixed(1) + ' %</span></div>' +
+        '<div class="trow"><span>Mise ' + t.stake + ' € → gain</span><span class="v">' + (cote * t.stake).toFixed(2) + ' €</span></div>' +
+        '</div>';
+      el.title = 'Charger dans le module 06 (Combiné)';
+      el.addEventListener('click', () => loadTicket(t));
+      box.appendChild(el);
+    });
+  }
+  function loadTicket(t) {
+    legsBox.innerHTML = '';
+    t.legs.forEach(l => {
+      const leg = document.createElement('div');
+      leg.className = 'leg';
+      leg.innerHTML = '<input type="number" class="leg-c" step="0.01" value="' + l.c + '" min="1.01"><button class="rm" aria-label="Retirer">✕</button>';
+      legsBox.appendChild(leg);
+      bindLeg(leg);
+    });
+    $('combo-s').value = t.stake;
+    combo();
+    legsBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ---------- 09 Risque de ruine (Monte-Carlo) ----------
+  const canvas = $('ruin-canvas');
+  const ctx = canvas.getContext('2d');
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function ruin() {
+    const cap0 = num($('r-cap')), stake = num($('r-stake')),
+          p = num($('r-win')) / 100, odds = num($('r-odds')), n = Math.round(num($('r-n')));
+    if (!(cap0 > 0) || !(stake > 0) || !(p > 0 && p < 1) || !(odds > 1) || !(n >= 1)) return;
+
+    const RUNS = 1500, KEEP = 26;
+    let ruined = 0;
+    const finals = [], curves = [];
+    for (let r = 0; r < RUNS; r++) {
+      let cap = cap0, dead = false;
+      const path = [cap];
+      for (let i = 0; i < n; i++) {
+        if (cap < stake) { dead = true; }       // plus de quoi miser → ruiné
+        if (dead) { path.push(0); continue; }
+        if (Math.random() < p) cap += stake * (odds - 1); else cap -= stake;
+        if (cap <= 0) { cap = 0; dead = true; }
+        path.push(cap);
+      }
+      if (dead) ruined++;
+      finals.push(cap);
+      if (r < KEEP) curves.push({ path, dead });
+    }
+    finals.sort((a, b) => a - b);
+    const median = finals[Math.floor(finals.length / 2)];
+    const evUnit = stake * (p * odds - 1);
+
+    const pr = ruined / RUNS;
+    const rEl = $('r-ruin');
+    rEl.textContent = (pr * 100).toFixed(1) + ' %';
+    rEl.style.color = pr > 0.3 ? cssVar('--neg') : pr > 0.1 ? cssVar('--accent') : cssVar('--pos');
+    const evEl = $('r-ev');
+    evEl.textContent = (evUnit >= 0 ? '+' : '') + evUnit.toFixed(2) + ' €';
+    evEl.style.color = evUnit >= 0 ? cssVar('--pos') : cssVar('--neg');
+    $('r-median').textContent = median.toFixed(0) + ' €';
+
+    drawCurves(curves, cap0);
+  }
+  function drawCurves(curves, cap0) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const pad = 8;
+    let maxCap = cap0 * 1.5;
+    curves.forEach(c => c.path.forEach(v => { if (v > maxCap) maxCap = v; }));
+    const n = curves[0].path.length - 1;
+    const x = i => pad + (W - 2 * pad) * (i / n);
+    const y = v => H - pad - (H - 2 * pad) * (v / maxCap);
+    // ligne capital de départ
+    ctx.strokeStyle = cssVar('--accent'); ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(pad, y(cap0)); ctx.lineTo(W - pad, y(cap0)); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    // trajectoires
+    curves.forEach(c => {
+      ctx.beginPath();
+      c.path.forEach((v, i) => { const px = x(i), py = y(v); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+      ctx.strokeStyle = c.dead ? cssVar('--neg') : cssVar('--muted');
+      ctx.globalAlpha = c.dead ? 0.8 : 0.45;
+      ctx.lineWidth = c.dead ? 1.4 : 1;
+      ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+  }
+  ['r-cap', 'r-stake', 'r-win', 'r-odds', 'r-n'].forEach(id => $(id).addEventListener('input', ruin));
+
+  // ---------- 10 Simulateur d'objectif ----------
+  const oCanvas = $('obj-canvas');
+  const octx = oCanvas.getContext('2d');
+  function objectif() {
+    const cap = num($('o-cap')), rate = num($('o-rate')) / 100, goal = num($('o-goal'));
+    if (!(cap > 0) || !(rate > 0) || !(goal > 0)) return;
+    const tEl = $('o-time');
+    if (goal <= cap) {
+      tEl.textContent = 'Déjà atteint';
+    } else {
+      const m = Math.ceil(Math.log(goal / cap) / Math.log(1 + rate));
+      const yrs = Math.floor(m / 12), mo = m % 12;
+      tEl.textContent = (yrs ? yrs + ' an' + (yrs > 1 ? 's ' : ' ') : '') + mo + ' mois';
+    }
+    $('o-12').textContent = (cap * Math.pow(1 + rate, 12)).toFixed(0) + ' €';
+    $('o-24').textContent = (cap * Math.pow(1 + rate, 24)).toFixed(0) + ' €';
+    const monthsToGoal = goal > cap ? Math.ceil(Math.log(goal / cap) / Math.log(1 + rate)) : 12;
+    const N = Math.min(Math.max(monthsToGoal, 24), 48);
+    drawGrowth(cap, rate, goal, N);
+  }
+  function drawGrowth(cap, rate, goal, N) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = oCanvas.clientWidth, H = oCanvas.clientHeight;
+    oCanvas.width = W * dpr; oCanvas.height = H * dpr;
+    octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    octx.clearRect(0, 0, W, H);
+    const pad = 8;
+    const vals = [];
+    for (let i = 0; i <= N; i++) vals.push(cap * Math.pow(1 + rate, i));
+    const maxV = Math.max(goal, vals[vals.length - 1]);
+    const x = i => pad + (W - 2 * pad) * (i / N);
+    const y = v => H - pad - (H - 2 * pad) * (v / maxV);
+    // ligne objectif
+    octx.strokeStyle = cssVar('--pos'); octx.globalAlpha = 0.6; octx.setLineDash([4, 4]); octx.lineWidth = 1;
+    octx.beginPath(); octx.moveTo(pad, y(goal)); octx.lineTo(W - pad, y(goal)); octx.stroke();
+    octx.setLineDash([]); octx.globalAlpha = 1;
+    // aire sous la courbe
+    octx.beginPath();
+    vals.forEach((v, i) => { const px = x(i), py = y(v); i ? octx.lineTo(px, py) : octx.moveTo(px, py); });
+    octx.lineTo(x(N), y(0)); octx.lineTo(x(0), y(0)); octx.closePath();
+    octx.fillStyle = cssVar('--accent-soft'); octx.globalAlpha = 0.5; octx.fill(); octx.globalAlpha = 1;
+    // courbe
+    octx.beginPath();
+    vals.forEach((v, i) => { const px = x(i), py = y(v); i ? octx.lineTo(px, py) : octx.moveTo(px, py); });
+    octx.strokeStyle = cssVar('--accent'); octx.lineWidth = 2; octx.stroke();
+  }
+  ['o-cap', 'o-rate', 'o-goal'].forEach(id => $(id).addEventListener('input', objectif));
+
+  // ---------- En direct (API) ----------
+  const RISK_LIVE = { low: { cls: 'b-low', txt: 'Faible' }, mid: { cls: 'b-mid', txt: 'Modéré' }, high: { cls: 'b-high', txt: 'Élevé' } };
+  async function fetchLive() {
+    const sport = $('live-sport').value;
+    const status = $('live-status'), body = $('live-body');
+    status.textContent = 'Chargement des cotes…';
+    body.innerHTML = '';
+    try {
+      const r = await fetch('/api/odds?sport=' + encodeURIComponent(sport));
+      const data = await r.json();
+      if (!r.ok) {
+        status.innerHTML = data.error === 'no_key'
+          ? '⚠️ ' + data.message
+          : '⚠️ Erreur API : ' + (data.message || r.status);
+        return;
+      }
+      if (!data.events.length) {
+        status.textContent = 'Aucun match coté pour cette compétition en ce moment.';
+        $('live-quota').textContent = data.quotaRestant ? 'Quota restant : ' + data.quotaRestant : '';
+        return;
+      }
+      status.textContent = data.count + ' match(s) chargé(s).';
+      $('live-quota').textContent = data.quotaRestant ? 'Quota restant : ' + data.quotaRestant : '';
+      const runEV = ev; // capture la fonction EV avant toute collision de nom
+      data.events.forEach(m => {
+        const d = new Date(m.commence);
+        const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' +
+          d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const cotes = m.outcomes.map(o => o.price.toFixed(2)).join(' / ');
+        const probs = m.outcomes.map(o => (o.fairProb * 100).toFixed(0) + '%').join(' / ');
+        const rk = RISK_LIVE[m.avis.niveau] || RISK_LIVE.high;
+        let avis = m.avis.texte + ' (' + m.avis.fairProb + '%)';
+        if (m.avisTotals) avis += ' · O' + m.avisTotals.point + ' ' + m.avisTotals.over + '%';
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><span class="m-name">' + m.home + ' – ' + m.away + '</span></td>' +
+          '<td class="m-num">' + dateStr + '</td>' +
+          '<td class="m-num">' + cotes + '</td>' +
+          '<td class="m-num">' + probs + '</td>' +
+          '<td><span class="badge ' + rk.cls + '">' + avis + '</span></td>' +
+          '<td class="m-num">' + m.margin.toFixed(1) + '%</td>';
+        const favPrice = m.outcomes.reduce((a, b) => (b.fairProb > a.fairProb ? b : a)).price;
+        tr.style.cursor = 'pointer';
+        tr.title = 'Charger la cote du favori dans le module 02 (EV)';
+        tr.addEventListener('click', () => {
+          $('ev-d').value = favPrice; runEV();
+          $('ev-d').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          $('ev-p').focus();
+        });
+        body.appendChild(tr);
+      });
+    } catch (e) {
+      status.innerHTML = '⚠️ Serveur injoignable. Lance le projet avec <b>npm start</b> puis ouvre http://localhost:3000 (le fichier ouvert seul ne peut pas appeler l\'API).';
+    }
+  }
+  $('live-refresh').addEventListener('click', fetchLive);
+
+  // ---------- Onglets du haut ----------
+  document.querySelectorAll('#top-tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#top-tabs button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      $(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---------- Init ----------
+  conv(); ev(); kelly(); vig(); arb(); combo(); analyse(); pois();
+  renderDaily(); renderPicks(); renderReason(); renderTickets(); ruin(); objectif();
+</script>

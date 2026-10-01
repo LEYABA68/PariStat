@@ -1,0 +1,25 @@
+{
+  "name": "paristat",
+  "version": "1.0.0",
+  "description": "Calculateur de statistiques pour paris sportifs avec cotes en direct et avis calculés",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "paris-sportifs",
+    "cotes",
+    "value-betting",
+    "kelly",
+    "poisson",
+    "odds-api"
+  ],
+  "author": "LEYABA68",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

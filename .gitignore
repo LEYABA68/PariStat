@@ -1,0 +1,11 @@
+# Dépendances
+node_modules/
+
+# Secrets — NE JAMAIS committer la vraie clé API
+.env
+
+# Logs / divers
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
