@@ -1367,9 +1367,10 @@
           '<td><span class="badge ' + rk.cls + '">' + avis + '</span></td>' +
           '<td class="m-num">' + m.margin.toFixed(1) + '%</td>';
         const chipsCell = tr.querySelector('.chips');
+        const frShort = n => n === 'Draw' ? 'Nul' : n;
         const sels = m.outcomes.map(o => ({
-          label: m.home + ' – ' + m.away + ' : ' + o.name,
-          short: o.name, price: o.price, p: o.fairProb
+          label: m.home + ' – ' + m.away + ' : ' + frShort(o.name),
+          short: frShort(o.name), price: o.price, p: o.fairProb
         }));
         if (m.totals) {
           sels.push({ label: m.home + ' – ' + m.away + ' : plus de ' + m.totals.point + ' buts', short: '+' + m.totals.point, price: m.totals.over.price, p: m.totals.over.fairProb });
@@ -1453,12 +1454,14 @@
     btts: 'Les deux équipes marquent', totals: 'Plus / Moins de buts', spreads: 'Handicap',
     player_goal_scorer_anytime: 'Buteur', player_first_goal_scorer: 'Premier buteur'
   };
+  function frName(s) { return String(s).replace(/ or /gi, ' ou ').replace(/\bDraw\b/gi, 'Nul'); }
   function outcomeLabel(key, o) {
     if (key === 'btts') return o.name === 'Yes' ? 'Oui' : o.name === 'No' ? 'Non' : o.name;
     if (key === 'totals') return (o.name === 'Over' ? 'Plus de ' : 'Moins de ') + o.point + ' buts';
-    if (key === 'spreads') return o.name + ' ' + (o.point > 0 ? '+' : '') + o.point;
+    if (key === 'spreads') return frName(o.name) + ' ' + (o.point > 0 ? '+' : '') + o.point;
+    if (key === 'double_chance' || key === 'h2h' || key === 'draw_no_bet') return frName(o.name);
     if (o.desc) return o.desc + (o.name && o.name !== 'Yes' ? ' — ' + o.name : '');
-    return o.name + (o.point != null ? ' ' + (o.point > 0 ? '+' : '') + o.point : '');
+    return frName(o.name) + (o.point != null ? ' ' + (o.point > 0 ? '+' : '') + o.point : '');
   }
   function renderDetail(box, data) {
     box.innerHTML = '';
